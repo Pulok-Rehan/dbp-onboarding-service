@@ -1,0 +1,10 @@
+package com.bracepl.dbp_onboarding_service.keycloak;
+
+import lombok.Data;
+
+@Data
+public class SignupRequest {
+    private String username;
+    private String email;
+    private String password;
+}
