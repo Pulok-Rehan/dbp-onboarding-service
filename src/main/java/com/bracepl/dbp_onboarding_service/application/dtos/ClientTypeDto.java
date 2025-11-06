@@ -8,7 +8,7 @@ import lombok.Data;
 public class ClientTypeDto {
     private String mobileNumber;
     private String boType;
-    private boolean isBoLinked;
+    private boolean boLinked;
     private String boNumber;
     private String name;
     private String email;

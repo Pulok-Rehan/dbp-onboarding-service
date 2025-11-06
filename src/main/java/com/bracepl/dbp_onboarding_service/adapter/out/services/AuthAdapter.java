@@ -1,8 +1,10 @@
 package com.bracepl.dbp_onboarding_service.adapter.out.services;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.AccountEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.FailedLoginAttempt;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.InternalUser;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.UserCredentials;
+import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.AccountRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.FailedLoginAttemptRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.InternalUserRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.UserCredentialRepository;
@@ -11,6 +13,7 @@ import com.bracepl.dbp_onboarding_service.application.dtos.LoginDto;
 import com.bracepl.dbp_onboarding_service.application.dtos.RegisterDto;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.AuthDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.UserCredential;
+import com.bracepl.dbp_onboarding_service.utils.JwtUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,13 +54,15 @@ public class AuthAdapter implements AuthDomain {
     private final ObjectMapper objectMapper;
     private final FailedLoginAttemptRepository failedLoginAttemptRepository;
     private final InternalUserRepository internalUserRepository;
+    private final AccountRepository accountRepository;
 
-    public AuthAdapter(UserCredentialRepository userCredentialRepository, RestTemplate restTemplate, ObjectMapper objectMapper, FailedLoginAttemptRepository failedLoginAttemptRepository, InternalUserRepository internalUserRepository) {
+    public AuthAdapter(UserCredentialRepository userCredentialRepository, RestTemplate restTemplate, ObjectMapper objectMapper, FailedLoginAttemptRepository failedLoginAttemptRepository, InternalUserRepository internalUserRepository, AccountRepository accountRepository) {
         this.userCredentialRepository = userCredentialRepository;
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
         this.failedLoginAttemptRepository = failedLoginAttemptRepository;
         this.internalUserRepository = internalUserRepository;
+        this.accountRepository = accountRepository;
     }
 
     @Override
@@ -175,6 +180,7 @@ public class AuthAdapter implements AuthDomain {
 
             JsonNode result = objectMapper.readTree(response.getBody());
             return result.get(0).get("id").asText();
+            //needs to check
         }
         catch (Exception e){
             e.printStackTrace();
@@ -276,10 +282,21 @@ public class AuthAdapter implements AuthDomain {
             );
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                failedLoginAttemptRepository.deleteById(username);
+                Map<String, Object> claims = JwtUtils.decodeJWT(response.getBody().getAccessToken());
+                if (attemptOptional.isPresent()){
+                    attemptOptional.get().setAttempts(0);
+                    failedLoginAttemptRepository.save(attemptOptional.get());
+                }
+                log.info("FOUND 200 FROM KEYCLOAK");
+//                Optional<AccountEntity> accountEntityOptional = accountRepository.findByMobileOrEmailOrInvestorCode(loginDto.getUsername());
+//                if (accountEntityOptional.isEmpty()){
+//                    return null;
+//                }
                 return AuthResponse.builder()
                         .statusCode("200")
                         .accessToken(response.getBody().getAccessToken())
+                        .emailAddress((String) claims.get("email"))
+                        .mobileNumber((String) claims.get("preferred_username"))
                         .refreshToken(response.getBody().getRefreshToken()).build();
             }
 
@@ -295,16 +312,19 @@ public class AuthAdapter implements AuthDomain {
                 failedLogin.setAttempts(failedLogin.getAttempts() + 1);
                 failedLogin.setLastFailedAt(LocalDateTime.now());
                 failedLoginAttemptRepository.save(failedLogin);
+                log.info("FOUND 401 FROM KEYCLOAK");
                 return AuthResponse.builder()
                         .statusCode("401").build();
             }
             if (e.getStatusCode().value() == 400){
+                log.info("FOUND 400 FROM KEYCLOAK HENCE TEMPORARY PASSWORD NEEDS TO BE CHANGED...");
                 return AuthResponse.builder()
                         .statusCode("421").build();
             }
             log.info("Client error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
             return null;
         } catch (RestClientException e) {
+            log.info("FOUND EXCEPTION FROM KEYCLOAK");
             log.info("Error requesting token: " + e.getMessage());
             return null;
         }
@@ -385,13 +405,13 @@ public class AuthAdapter implements AuthDomain {
         try {
             Optional<InternalUser> internalUserOptional = internalUserRepository.findByEmployeeCode(employeeCode);
             if (internalUserOptional.isEmpty()){
-                return new InternalUser();
+                return null;
             }
             return internalUserOptional.get();
         }
         catch (Exception e){
             e.printStackTrace();
-            return new InternalUser();
+            return null;
         }
     }
 

@@ -51,8 +51,8 @@ public class AuthController {
     }
 
     @PostMapping(value = "/public/register/internal")
-    public ServiceResponse registerUserInternal(@RequestBody RegisterDtoInternal registerDtoInternal) throws IOException {
-        return authUseCase.registerInternal(registerDtoInternal);
+    public ServiceResponse registerUserInternal(@RequestBody RegisterDtoInternal registerDtoInternal, @RequestHeader String otp) throws IOException {
+        return authUseCase.registerInternal(registerDtoInternal, otp);
     }
 
 }

@@ -4,9 +4,12 @@ import com.bracepl.dbp_onboarding_service.adapter.out.entities.AccountEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.RmEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.AccountRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.RmRepository;
+import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.ComplianceDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
+import com.bracepl.dbp_onboarding_service.domain.utils.DateUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -14,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+@Slf4j
 public class ComplianceAdapter implements ComplianceDomain {
     private final AccountRepository accountRepository;
     private final RmRepository rmRepository;
@@ -64,6 +68,19 @@ public class ComplianceAdapter implements ComplianceDomain {
         }
     }
 
+    @Override
+    public List<Account> searchAccount(AccountSearchRequest accountSearchRequest) {
+        try {
+            List<AccountEntity> accountEntityList = accountRepository.searchAccounts(accountSearchRequest);
+            log.info("POPULATING TO ACCOUNT MODEL...");
+            return populateToAccountModelList(accountEntityList);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 
     private List<Account> populateToAccountModelList(List<AccountEntity> accountEntityList){
         List<Account> accountList = new ArrayList<>();
@@ -96,6 +113,8 @@ public class ComplianceAdapter implements ComplianceDomain {
                     .signature(accountEntity.getSignature())
                     .chequeLeaf(accountEntity.getChequeLeaf())
                     .accountStatus(accountEntity.getAccountStatus())
+                    .createdAt(DateUtils.formatDateTime(accountEntity.getCreatedAt()))
+                    .updatedAt(DateUtils.formatDateTime(accountEntity.getUpdatedAt()))
                     .build();
             accountList.add(account);
         }

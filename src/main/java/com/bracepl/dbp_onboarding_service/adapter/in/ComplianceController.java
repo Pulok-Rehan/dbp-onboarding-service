@@ -1,5 +1,6 @@
 package com.bracepl.dbp_onboarding_service.adapter.in;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
 import com.bracepl.dbp_onboarding_service.application.dtos.ActivateAccountDto;
 import com.bracepl.dbp_onboarding_service.application.interfaces.ComplianceUseCase;
 import com.bracepl.dbp_onboarding_service.application.interfaces.SettlementUseCase;
@@ -32,8 +33,8 @@ public class ComplianceController {
         return complianceUseCase.instantBoActivation(accountId);
     }
 
-    @GetMapping(path = "/getAcceptedAccounts")
-    public ServiceResponse getAcceptedAccounts() throws JsonProcessingException {
-        return complianceUseCase.getAcceptedAccounts();
+    @PostMapping(path = "/search")
+    public ServiceResponse getAcceptedAccounts(@RequestBody AccountSearchRequest accountSearchRequest) throws JsonProcessingException {
+        return complianceUseCase.searchAccount(accountSearchRequest);
     }
 }

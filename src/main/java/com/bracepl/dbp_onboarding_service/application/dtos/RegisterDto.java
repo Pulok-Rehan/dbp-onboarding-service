@@ -11,4 +11,5 @@ public class RegisterDto {
     private String email;
     @NonNull
     private String mobileNumber;
+    private String statusCode;
 }

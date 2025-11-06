@@ -14,10 +14,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Repository
-@RequiredArgsConstructor
 public class AccountRepositoryImpl implements AccountRepositoryCustom {
 
     private final MongoTemplate mongoTemplate;
+
+    public AccountRepositoryImpl(MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
+    }
 
     @Override
     public List<AccountEntity> searchAccounts(AccountSearchRequest request) {

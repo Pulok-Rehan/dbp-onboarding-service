@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -133,4 +134,9 @@ public class PowerOfAttorneyService implements PowerOfAttorneyUseCase {
         log.info("POWER OF ATTORNEY REVOKED SUCCESSFULLY...");
         return new ServiceResponse("Power of attorney added", objectMapper.writeValueAsString(savedAccount));
     }
+
+//    @Override
+//    public ServiceResponse getInvestor(Map<String, String> param) throws JsonProcessingException {
+//        Account account = accountDomain.find
+//    }
 }

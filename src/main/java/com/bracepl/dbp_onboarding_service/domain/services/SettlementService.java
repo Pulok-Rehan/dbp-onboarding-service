@@ -1,6 +1,7 @@
 package com.bracepl.dbp_onboarding_service.domain.services;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
+import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.interfaces.SettlementUseCase;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.SettlementDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
@@ -55,13 +56,13 @@ public class SettlementService implements SettlementUseCase {
     }
 
     @Override
-    public ServiceResponse acceptAccount(String accountId) throws JsonProcessingException {
-        Account account = settlementDomain.acceptRequestedAccount(accountId);
-        if (account == null){
+    public ServiceResponse acceptAccount(List<String> accountIds) throws JsonProcessingException {
+        List<Account> accounts = settlementDomain.acceptRequestedAccount(accountIds);
+        if (accounts.isEmpty() || accounts == null){
             log.info("COULD NOT ACCEPT ACCOUNT...");
             return new ServiceResponse("Could not accept account opening request");
         }
-        return new ServiceResponse("Account opening request accepted successfully", objectMapper.writeValueAsString(account));
+        return new ServiceResponse("Account opening request accepted successfully", objectMapper.writeValueAsString(accounts));
     }
 
     @Override
@@ -71,7 +72,7 @@ public class SettlementService implements SettlementUseCase {
 
     @Override
     public ServiceResponse searchAccount(AccountSearchRequest accountSearchRequest) throws JsonProcessingException {
-        log.info("SEARCHING ACCOUNTS FOR SETTLEMENT...");
+        log.info("SEARCHING ACCOUNTS FOR SETTLEMENT...{}", accountSearchRequest.toString());
         List<Account> accountList = settlementDomain.searchAccount(accountSearchRequest);
         if (accountList.isEmpty()){
             log.info("COULD NOT GET ANY ACCOUNT OPENING REQUEST...");
@@ -79,5 +80,16 @@ public class SettlementService implements SettlementUseCase {
         }
         log.info("ACCOUNTS RETRIEVED SUCCESSFULLY...");
         return new ServiceResponse("Account opening requests retrived", objectMapper.writeValueAsString(accountList));
+    }
+
+    @Override
+    public ServiceResponse requireEdit(EditAccountRequest editAccountRequest) throws JsonProcessingException {
+        log.info("EDIT REQUEST FOR ACCOUNTS FOR SETTLEMENT...{}", editAccountRequest.toString());
+        String account = settlementDomain.requiresEdit(editAccountRequest);
+        if (account == ""){
+            log.info("COULD NOT GET ACCOUNT OPENING REQUEST...");
+            return new ServiceResponse("Could not get account opening request");
+        }
+        return new ServiceResponse("Account opening request retrived", objectMapper.writeValueAsString(account));
     }
 }

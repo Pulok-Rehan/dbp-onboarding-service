@@ -1,6 +1,8 @@
 package com.bracepl.dbp_onboarding_service.adapter.in;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
+import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
+import com.bracepl.dbp_onboarding_service.application.dtos.IdDto;
 import com.bracepl.dbp_onboarding_service.application.interfaces.SettlementUseCase;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,8 +30,8 @@ public class SettlementController {
     }
 
     @PostMapping(path = "/acceptAccount")
-    public ServiceResponse acceptAccount(@RequestParam String accountId) throws JsonProcessingException {
-        return settlementUseCase.acceptAccount(accountId);
+    public ServiceResponse acceptAccount(@RequestBody IdDto idDto) throws JsonProcessingException {
+        return settlementUseCase.acceptAccount(idDto.getIds());
     }
 
     @GetMapping(path = "/requestForChange")
@@ -45,5 +47,10 @@ public class SettlementController {
     @GetMapping(path = "/getCodeAndMobileNumberList")
     public ServiceResponse getCodeAndMobileNumberList() throws JsonProcessingException {
         return settlementUseCase.getCodeAndMobileNumberList();
+    }
+
+    @PostMapping(path = "/require-edit")
+    public ServiceResponse requireEdit(@RequestBody EditAccountRequest editAccountRequest) throws JsonProcessingException {
+        return settlementUseCase.requireEdit(editAccountRequest);
     }
 }

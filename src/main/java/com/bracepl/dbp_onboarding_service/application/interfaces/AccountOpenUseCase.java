@@ -1,5 +1,6 @@
 package com.bracepl.dbp_onboarding_service.application.interfaces;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.dtos.*;
 import com.bracepl.dbp_onboarding_service.domain.models.PartialAccount;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
@@ -22,6 +23,7 @@ public interface AccountOpenUseCase {
     ServiceResponse verifyNid(MultipartFile nidPhoto, MultipartFile photo) throws IOException;
     ServiceResponse extractNidData(MultipartFile nidFront, MultipartFile nidBack, MultipartFile photo, String investorCode, String boId) throws IOException;
     ServiceResponse verifyNidAstha(String nidNumber, String dateOfBirth, MultipartFile photo) throws IOException;
-    ServiceResponse editAccount(PartialAccount partialAccount) throws JsonProcessingException;
+    ServiceResponse editAccount(EditAccountRequest editAccountRequest) throws IOException;
     ServiceResponse searchAccount(String input) throws JsonProcessingException;
+    ServiceResponse getCompletionData(String mobileNumber) throws JsonProcessingException;
 }

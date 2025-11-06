@@ -1,14 +1,12 @@
 package com.bracepl.dbp_onboarding_service.adapter.out.services;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.*;
-import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.AccountRepository;
-import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.CsdRepository;
-import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.EkycService;
-import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.NidVerificationRepository;
+import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.*;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.NidVerificationResponse;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.AccountDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
+import com.bracepl.dbp_onboarding_service.domain.models.CompletionSection;
 import com.bracepl.dbp_onboarding_service.domain.models.Ekyc;
 import com.bracepl.dbp_onboarding_service.domain.models.JointAccoint;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,8 +55,9 @@ public class AccountAdapter implements AccountDomain {
     private final NidVerificationRepository nidVerificationRepository;
     private final SequenceGeneratorService sequenceGeneratorService;
     private final CsdRepository csdRepository;
+    private final AccountCompletionRepository accountCompletionRepository;
 
-    public AccountAdapter(AccountRepository accountRepository, EkycService ekycService, RestTemplate restTemplate, ObjectMapper objectMapper, NidVerificationRepository nidVerificationRepository, SequenceGeneratorService sequenceGeneratorService, CsdRepository csdRepository) {
+    public AccountAdapter(AccountRepository accountRepository, EkycService ekycService, RestTemplate restTemplate, ObjectMapper objectMapper, NidVerificationRepository nidVerificationRepository, SequenceGeneratorService sequenceGeneratorService, CsdRepository csdRepository, AccountCompletionRepository accountCompletionRepository) {
         this.accountRepository = accountRepository;
         this.ekycService = ekycService;
         this.restTemplate = restTemplate;
@@ -66,6 +65,7 @@ public class AccountAdapter implements AccountDomain {
         this.nidVerificationRepository = nidVerificationRepository;
         this.sequenceGeneratorService = sequenceGeneratorService;
         this.csdRepository = csdRepository;
+        this.accountCompletionRepository = accountCompletionRepository;
     }
 
     @Override
@@ -95,8 +95,20 @@ public class AccountAdapter implements AccountDomain {
     @Override
     public Account saveWithBoLinked(Account account, String boNumber) {
         try {
-            AccountEntity savedAccountEntity = accountRepository.save(this.populateToAccountEntityWithBoLinked(account, boNumber));
-            return addIdToAccountObject(account, savedAccountEntity.getId());
+            List<CsdEntity> csdEntities = csdRepository.findAll();
+            if (!csdEntities.isEmpty()) {
+                Random random = new Random();
+                int randomIndex = random.nextInt(csdEntities.size());
+                String csdId = csdEntities.get(randomIndex).getId();
+                AccountEntity accountEntity = this.populateToAccountEntity(account, csdId);
+                if (accountEntity.getInvestorCode() == null){
+                    accountEntity.setInvestorCode(sequenceGeneratorService.generateInvestorCode("investor_code"));
+                }
+                AccountEntity savedAccountEntity = accountRepository.save(this.populateToAccountEntityWithBoLinked(account, boNumber));
+                return addIdToAccountObject(account, savedAccountEntity.getId());// assuming getId() exists
+            }
+            else return null;
+
         }
         catch (Exception e){
             e.printStackTrace();
@@ -107,8 +119,20 @@ public class AccountAdapter implements AccountDomain {
     @Override
     public Account saveWithJointAccount(Account account, JointAccoint jointAccoint) {
         try {
-            AccountEntity savedAccountEntity = accountRepository.save(this.populateToAccountEntityWithJointAccount(account, this.populateToJointAccountEntity(jointAccoint)));
-            return addIdToAccountObject(account, savedAccountEntity.getId());
+            List<CsdEntity> csdEntities = csdRepository.findAll();
+            if (!csdEntities.isEmpty()) {
+                Random random = new Random();
+                int randomIndex = random.nextInt(csdEntities.size());
+                String csdId = csdEntities.get(randomIndex).getId();
+                AccountEntity accountEntity = this.populateToAccountEntity(account, csdId);
+                if (accountEntity.getInvestorCode() == null){
+                    accountEntity.setInvestorCode(sequenceGeneratorService.generateInvestorCode("investor_code"));
+                }
+                AccountEntity savedAccountEntity = accountRepository.save(this.populateToAccountEntityWithJointAccount(account, this.populateToJointAccountEntity(jointAccoint)));
+                return addIdToAccountObject(account, savedAccountEntity.getId());
+            }
+            else return null;
+
         }
         catch (Exception e){
             e.printStackTrace();
@@ -173,6 +197,21 @@ public class AccountAdapter implements AccountDomain {
             return null;
         }
     }
+
+//    @Override
+//    public Account findByEmail(String email) {
+//        try {
+//            Optional<AccountEntity> optionalAccountEntity = accountRepository.findByEmailAddress(email);
+//            if (optionalAccountEntity.isPresent()){
+//                return this.populateToAccountModel(optionalAccountEntity.get());
+//            }
+//            return null;
+//        }
+//        catch (Exception e){
+//            e.printStackTrace();
+//            return null;
+//        }
+//    }
 
     @Override
     public Account findByMobileNumberForForgetPassword(String mobileNumber) {
@@ -298,6 +337,23 @@ public class AccountAdapter implements AccountDomain {
 //                    .message(e.getMessage())
 //                    .success(false)
 //                    .build());
+            return null;
+        }
+    }
+
+    @Override
+    public CompletionSection getAccountCompletionRate(String mobileNumber) {
+        try {
+            CompletionSection completionSection;
+            Optional<CompletionSectionEntity> optionalCompletionSectionEntity = accountCompletionRepository.findByMobileNumber(mobileNumber);
+            if (optionalCompletionSectionEntity.isPresent()){
+                completionSection = this.populateToCompletionSection(optionalCompletionSectionEntity.get());
+                return completionSection;
+            }
+            return null ;
+        }
+        catch (Exception e){
+            e.printStackTrace();
             return null;
         }
     }
@@ -478,5 +534,17 @@ public class AccountAdapter implements AccountDomain {
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         return filePath.toString();
+    }
+
+    private CompletionSection populateToCompletionSection(CompletionSectionEntity completionSection){
+        return CompletionSection.builder()
+                .mobileNumber(completionSection.getMobileNumber())
+                .personalDetails(completionSection.isPersonalDetails())
+                .address(completionSection.isAddress())
+                .bankDetails(completionSection.isBankDetails())
+                .nomineeDetails(completionSection.isNomineeDetails())
+                .nidPhotos(completionSection.isNidPhotos())
+                .documents(completionSection.isDocuments())
+                .build();
     }
 }

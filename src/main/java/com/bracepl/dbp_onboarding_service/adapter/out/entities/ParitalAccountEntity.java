@@ -14,7 +14,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 @Document(collection = "partialAccountDetails")
-public class ParitalAccount {
+public class ParitalAccountEntity {
     @Id
     private String id;
     private String investorCode;
@@ -46,5 +46,9 @@ public class ParitalAccount {
     private List<NomineeEntity> nominees;
     private CompletionSectionEntity completionSection;
     private boolean isActive;
+    private String accountStatus;
     private String transactionStatus;
+    private String csdId;
+    private boolean csdContacted;
+    private String remark;
 }

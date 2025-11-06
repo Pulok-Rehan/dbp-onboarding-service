@@ -3,7 +3,6 @@ package com.bracepl.dbp_onboarding_service.adapter.out.services;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.AccountEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.CompletionSectionEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.NomineeEntity;
-import com.bracepl.dbp_onboarding_service.adapter.out.entities.ParitalAccount;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.AccountCompletionRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.AccountRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.NomineeRepository;
@@ -130,15 +129,28 @@ public class NomineeAdapter implements NomineeDomain {
                 .name(nominee.getName())
                 .relation(nominee.getRelation())
                 .percentage(nominee.getNomineePercentage())
+                .city(nominee.getName())
+                .country(nominee.getName())
+                .state(nominee.getName())
+                .zipCode(nominee.getName())
+                .country(nominee.getName())
+                .mobileNumber(nominee.getMobileNumber())
                 .build();
     }
 
     private Nominee populateToNomineeModel(NomineeEntity nominee){
         return Nominee.builder()
+                .id(nominee.getId())
                 .nomineeNidNumber(nominee.getNid())
                 .name(nominee.getName())
                 .relation(nominee.getRelation())
                 .nomineePercentage(nominee.getPercentage())
+                .city(nominee.getName())
+                .country(nominee.getName())
+                .state(nominee.getName())
+                .zipCode(nominee.getName())
+                .country(nominee.getName())
+                .mobileNumber(nominee.getMobileNumber())
                 .build();
     }
 }

@@ -1,5 +1,6 @@
 package com.bracepl.dbp_onboarding_service.adapter.in;
 
+import com.bracepl.dbp_onboarding_service.application.dtos.AccountIdDto;
 import com.bracepl.dbp_onboarding_service.application.dtos.RmAction;
 import com.bracepl.dbp_onboarding_service.application.interfaces.RmUseCase;
 import com.bracepl.dbp_onboarding_service.domain.enums.Action;
@@ -19,16 +20,16 @@ public class RmController {
     }
 
     @GetMapping(path = "/getClients")
-    public ServiceResponse getAccountOpeningRequests() throws JsonProcessingException {
-        return rmUseCase.getClients();
+    public ServiceResponse getAccountOpeningRequests(@RequestParam String mobileNumber) throws JsonProcessingException {
+        return rmUseCase.getClients(mobileNumber);
     }
     @PostMapping(path = "/takeAction")
     public ServiceResponse getAccountOpeningRequest(@RequestBody RmAction rmAction) throws JsonProcessingException {
         return rmUseCase.takeActionOfClient(rmAction);
     }
-    @GetMapping(path = "/contactClient")
-    public ServiceResponse acceptAccount(@RequestParam String accountId) throws JsonProcessingException {
-        return rmUseCase.contactClient(accountId);
+    @PostMapping(path = "/contactClient")
+    public ServiceResponse acceptAccount(@RequestBody AccountIdDto accountId) throws JsonProcessingException {
+        return rmUseCase.contactClient(accountId.getAccountId());
     }
 
 

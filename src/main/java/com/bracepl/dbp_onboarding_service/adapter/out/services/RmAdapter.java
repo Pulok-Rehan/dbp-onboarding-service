@@ -1,8 +1,10 @@
 package com.bracepl.dbp_onboarding_service.adapter.out.services;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.AccountEntity;
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.ClientRemarks;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.RmEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.AccountRepository;
+import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.ClientRemarksRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.RmRepository;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.RmDomain;
@@ -20,10 +22,12 @@ import java.util.Optional;
 public class RmAdapter implements RmDomain {
     private final RmRepository rmRepository;
     private final AccountRepository accountRepository;
+    private final ClientRemarksRepository remarksRepository;
 
-    public RmAdapter(RmRepository rmRepository, AccountRepository accountRepository) {
+    public RmAdapter(RmRepository rmRepository, AccountRepository accountRepository, ClientRemarksRepository remarksRepository) {
         this.rmRepository = rmRepository;
         this.accountRepository = accountRepository;
+        this.remarksRepository = remarksRepository;
     }
 
     @Override
@@ -38,9 +42,13 @@ public class RmAdapter implements RmDomain {
     }
 
     @Override
-    public List<Account> getAllClients(String rmId) {
+    public List<Account> getAllClients(String mobileNumber) {
         try {
-            List<AccountEntity> accountEntityList = accountRepository.findByRmId(rmId);
+            Optional<RmEntity> rmEntityOptional = rmRepository.findByMobileNumber(mobileNumber);
+            if (rmEntityOptional.isEmpty()){
+                return null;
+            }
+            List<AccountEntity> accountEntityList = accountRepository.findByRmId(rmEntityOptional.get().getId());
             return populateToAccountModelList(accountEntityList);
         }
         catch (Exception e){
@@ -67,8 +75,12 @@ public class RmAdapter implements RmDomain {
     }
 
     @Override
-    public boolean rejectCLient(String clientId, String reason) {
+    public boolean rejectCLient(String clientId, String reason, String mobileNumber) {
         try {
+            Optional<RmEntity> rmEntityOptional = rmRepository.findByMobileNumber(mobileNumber);
+            if (rmEntityOptional.isEmpty()){
+                return false;
+            }
             Optional<AccountEntity> clientAccount = accountRepository.findById(clientId);
             if (clientAccount.isEmpty()){
                 return false;
@@ -77,6 +89,10 @@ public class RmAdapter implements RmDomain {
             clientAccount.get().setAccountStatus(AccountStatus.ACCEPTED);
             clientAccount.get().setRmAccepted(false);
             accountRepository.save(clientAccount.get());
+            remarksRepository.save(ClientRemarks.builder()
+                    .rejectedReason(reason)
+                    .accountId(clientId)
+                    .userId(rmEntityOptional.get().getId()).build());
             return true;
         }
         catch (Exception e){
@@ -108,7 +124,7 @@ public class RmAdapter implements RmDomain {
             RmModel rmModel = RmModel.builder()
                     .id(rmEntity.getId())
                     .name(rmEntity.getName())
-                    .emolyeeCode(rmEntity.getEmolyeeCode()).build();
+                    .emolyeeCode(rmEntity.getEmployeeCode()).build();
             rmModelList.add(rmModel);
         }
         return rmModelList;
@@ -145,6 +161,13 @@ public class RmAdapter implements RmDomain {
                     .signature(accountEntity.getSignature())
                     .chequeLeaf(accountEntity.getChequeLeaf())
                     .accountStatus(accountEntity.getAccountStatus())
+                    .rmId(accountEntity.getRmId())
+                    .csdId(accountEntity.getCsdId())
+                    .rmAccepted(accountEntity.isRmAccepted())
+                    .csdContacted(accountEntity.isCsdContaced())
+                    .rmContacted(accountEntity.isRmContacted())
+                    .updatedAt(accountEntity.getUpdatedAt().toString())
+                    .createdAt(accountEntity.getCreatedAt().toString())
                     .build();
             accountList.add(account);
         }

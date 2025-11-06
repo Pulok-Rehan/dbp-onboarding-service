@@ -60,6 +60,7 @@ public class AccountEntity {
     private boolean rmContacted;
     private String csdId;
     private boolean csdContaced;
+    private String remark;
     @CreatedDate
     private LocalDateTime createdAt;
     @LastModifiedDate

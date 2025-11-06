@@ -24,4 +24,10 @@ public class NomineeEntity {
     private String nid;
     private LocalDate dateOfBirth;
     private double percentage;
+    private String city;
+    private String country;
+    private String state;
+    private String zipCode;
+    private String address;
+    private String mobileNumber;
 }

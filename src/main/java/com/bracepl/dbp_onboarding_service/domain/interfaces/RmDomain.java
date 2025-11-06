@@ -9,7 +9,7 @@ public interface RmDomain {
     List<RmModel> getAllRms();
     List<Account> getAllClients(String rmId);
     boolean acceptCLient(String clientId);
-    boolean rejectCLient(String clientId, String reason);
+    boolean rejectCLient(String clientId, String reason, String mobileNumber);
     boolean contactClient(String clientId);
 
 }

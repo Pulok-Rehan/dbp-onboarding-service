@@ -3,8 +3,6 @@ package com.bracepl.dbp_onboarding_service.application.dtos;
 import lombok.Data;
 
 @Data
-public class RemarkDto {
+public class AccountIdDto {
     private String accountId;
-    private String remark;
-    private String accountStatus;
 }

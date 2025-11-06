@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class RmAction {
+    private String mobileNumber;
     private Action action;
     private String reason;
     private String clientId;

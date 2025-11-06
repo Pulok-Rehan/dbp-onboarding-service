@@ -9,5 +9,6 @@ import org.springframework.security.core.userdetails.User;
 @Data
 public class RmEntity extends UserCredentials {
     private String name;
-    private String emolyeeCode;
+    private String employeeCode;
+    private String mobileNumber;
 }

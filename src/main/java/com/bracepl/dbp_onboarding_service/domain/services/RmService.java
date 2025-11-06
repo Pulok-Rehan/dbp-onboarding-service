@@ -25,8 +25,8 @@ public class RmService implements RmUseCase {
     }
 
     @Override
-    public ServiceResponse getClients() throws JsonProcessingException {
-        List<Account> accountList = rmDomain.getAllClients("1");
+    public ServiceResponse getClients(String mobileNumber) throws JsonProcessingException {
+        List<Account> accountList = rmDomain.getAllClients(mobileNumber);
         if (accountList.isEmpty()){
             log.info("COULD NOT GET ANY CLIENTS...");
             return new ServiceResponse("Could not get any client");
@@ -41,7 +41,7 @@ public class RmService implements RmUseCase {
                 log.info("REASON IS NOT PROVIDED FOR REJECTING THE CLIENT {}...", rmAction.getClientId());
                 return new ServiceResponse("Please specify a reason");
             }
-            boolean isRejected = rmDomain.rejectCLient(rmAction.getClientId(), rmAction.getReason());
+            boolean isRejected = rmDomain.rejectCLient(rmAction.getClientId(), rmAction.getReason(), rmAction.getMobileNumber());
             if (!isRejected){
                 log.info("COULD NOT REJECT CLIENT...");
                 return new ServiceResponse("Could not reject client");
@@ -58,7 +58,7 @@ public class RmService implements RmUseCase {
 
     @Override
     public ServiceResponse contactClient(String accountId) throws JsonProcessingException {
-        boolean isContacted = rmDomain.acceptCLient(accountId);
+        boolean isContacted = rmDomain.contactClient(accountId);
         if (!isContacted){
             log.info("COULD NOT CONTACT CLIENT...");
             return new ServiceResponse("Could not contact client");

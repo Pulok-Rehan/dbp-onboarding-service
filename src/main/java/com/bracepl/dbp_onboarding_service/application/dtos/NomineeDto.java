@@ -6,7 +6,13 @@ import lombok.Data;
 public class NomineeDto {
     private String name;
     private String nomineeNid;
-    private String nomineeDob;
+    private String nomineeMobileNumber;
     private double nomineePercentage;
     private String relation;
+    private String city;
+    private String country;
+    private String state;
+    private String zipCode;
+    private String address;
+
 }

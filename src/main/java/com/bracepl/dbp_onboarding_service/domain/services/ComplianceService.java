@@ -1,5 +1,6 @@
 package com.bracepl.dbp_onboarding_service.domain.services;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
 import com.bracepl.dbp_onboarding_service.application.dtos.ActivateAccountDto;
 import com.bracepl.dbp_onboarding_service.application.interfaces.ComplianceUseCase;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.ComplianceDomain;
@@ -75,5 +76,15 @@ public class ComplianceService implements ComplianceUseCase {
     @Override
     public ServiceResponse approveProfileUpdateRequest(Account account) {
         return null;
+    }
+
+    @Override
+    public ServiceResponse searchAccount(AccountSearchRequest accountSearchRequest) throws JsonProcessingException {
+        List<Account> accountList = complianceDomain.searchAccount(accountSearchRequest);
+        if (accountList.isEmpty()){
+            log.info("COULD NOT GET ACCEPTED ACCOUNTS...");
+            return new ServiceResponse("Could not get accepted accounts");
+        }
+        return new ServiceResponse("Accounts retrieved successfully", objectMapper.writeValueAsString(accountList));
     }
 }

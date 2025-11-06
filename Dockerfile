@@ -12,7 +12,7 @@ COPY ${JAR_FILE} app.jar
 RUN mkdir -p /uploads
 
 # Expose the port your Spring Boot app runs on
-EXPOSE 8080
+EXPOSE 9092
 
 # Run the JAR file
 ENTRYPOINT ["java", "-Dsun.net.inetaddr.ttl=0", "-Djava.net.preferIPv4Stack=true", "-jar", "app.jar"]

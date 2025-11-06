@@ -1,11 +1,17 @@
 package com.bracepl.dbp_onboarding_service.adapter.out.services;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.AccountEntity;
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.EditRequired;
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.ParitalAccountEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.AccountRepository;
+import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.EditRequiredRepository;
+import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.PartialAccountRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
+import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.SettlementDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
+import com.bracepl.dbp_onboarding_service.domain.models.PartialAccount;
 import com.bracepl.dbp_onboarding_service.domain.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,9 +22,13 @@ import java.util.*;
 @Component
 public class SettlementAdapter implements SettlementDomain {
     private final AccountRepository accountRepository;
+    private final PartialAccountRepository partialAccountRepository;
+    private final EditRequiredRepository editRequiredRepository;
 
-    public SettlementAdapter(AccountRepository accountRepository) {
+    public SettlementAdapter(AccountRepository accountRepository, PartialAccountRepository partialAccountRepository, EditRequiredRepository editRequiredRepository) {
         this.accountRepository = accountRepository;
+        this.partialAccountRepository = partialAccountRepository;
+        this.editRequiredRepository = editRequiredRepository;
     }
 
     @Override
@@ -73,15 +83,55 @@ public class SettlementAdapter implements SettlementDomain {
     }
 
     @Override
-    public Account acceptRequestedAccount(String accountId) {
+    public String requiresEdit(EditAccountRequest editAccountRequest) {
+        Optional<ParitalAccountEntity> accountEntityOptional = partialAccountRepository.findById(editAccountRequest.getAccountId());
+        if (accountEntityOptional.isEmpty()) {
+            log.info("COULD NOT GET ACCOUNT INFORMATION WITH THIS ID: {}", editAccountRequest.getAccountId());
+            return "";
+        }
+
+        Optional<EditRequired> editRequiredOptional = editRequiredRepository.findByAccountId(editAccountRequest.getAccountId());
+
+        EditRequired editRequired;
+
+        if (editRequiredOptional.isEmpty()) {
+            // Create new entry if none exists
+            editRequired = EditRequired.fromRequest(editAccountRequest);
+            log.info("CREATED NEW EditRequired ENTRY FOR ACCOUNT ID: {}", editAccountRequest.getAccountId());
+        } else {
+            // Update existing record with provided values only
+            editRequired = editRequiredOptional.get();
+            updateEditRequired(editRequired, editAccountRequest);
+            log.info("UPDATED EXISTING EditRequired ENTRY FOR ACCOUNT ID: {}", editAccountRequest.getAccountId());
+        }
+
+        editRequiredRepository.save(editRequired);
+
+        return "Account Update Request sent";
+
+
+    }
+
+    @Override
+    public List<Account> acceptRequestedAccount(List<String> accountIds) {
+        List<Account> acceptedAccounts = new ArrayList<>();
         try {
-            Optional<AccountEntity> accountEntityOptional = accountRepository.findById(accountId);
-            if (accountEntityOptional.isEmpty()){
+            Account account = new Account();
+            for (String accountId : accountIds){
+                Optional<AccountEntity> accountEntityOptional = accountRepository.findById(accountId);
+                if (accountEntityOptional.isEmpty()){
+                    break;
+                }
+                accountEntityOptional.get().setAccountStatus(AccountStatus.ACCEPTED);
+                AccountEntity savedAccount = accountRepository.save(accountEntityOptional.get());
+                account = this.populateToAccountModel(savedAccount);
+                acceptedAccounts.add(account);
+            }
+            if (acceptedAccounts.isEmpty()){
                 return null;
             }
-            accountEntityOptional.get().setAccountStatus(AccountStatus.ACCEPTED);
-            AccountEntity savedAccount = accountRepository.save(accountEntityOptional.get());
-            return this.populateToAccountModel(savedAccount);
+            return acceptedAccounts;
+
         }
         catch (Exception e){
             e.printStackTrace();
@@ -181,4 +231,28 @@ public class SettlementAdapter implements SettlementDomain {
                 .updatedAt(DateUtils.formatDateTime(account.getUpdatedAt()))
                 .build();
     }
+
+    private void updateEditRequired(EditRequired existing, EditAccountRequest request) {
+        if (request.isPhotoSection()) existing.setPhotoSection(true);
+        if (request.isPersonalDetailsSection()) existing.setPersonalDetailsSection(true);
+        if (request.isBankDetailsSection()) existing.setBankDetailsSection(true);
+        if (request.isAddressSection()) existing.setAddressSection(true);
+        if (request.isDocumentsSection()) existing.setDocumentsSection(true);
+
+        if (request.getPersonalDetailsDto() != null)
+            existing.setPersonalDetailsDto(request.getPersonalDetailsDto());
+
+        if (request.getBankDetailsDto() != null)
+            existing.setBankDetailsDto(request.getBankDetailsDto());
+
+        if (request.getAddressDto() != null)
+            existing.setAddressDto(request.getAddressDto());
+
+        if (request.getDocumentsDto() != null)
+            existing.setDocumentsDto(request.getDocumentsDto());
+
+        if (request.getRequestedBy() != null)
+            existing.setRequestedBy(request.getRequestedBy());
+    }
+
 }

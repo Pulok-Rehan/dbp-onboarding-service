@@ -6,7 +6,6 @@ import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 @RestController
 @RequestMapping("/onboarding/csd")
 public class CsdController {
@@ -16,16 +15,28 @@ public class CsdController {
         this.csdUseCase = csdUseCase;
     }
 
-    @GetMapping(path = "/addRemark")
+    @PostMapping(path = "/addRemark")
     public ServiceResponse requestForChange(@RequestBody RemarkDto remarkDto){
         return csdUseCase.addRemark(remarkDto);
     }
-    @GetMapping(path = "/getClients")
-    public ServiceResponse getClients() throws JsonProcessingException {
-        return csdUseCase.getClients();
+
+    @GetMapping(path = "/getClientsFinal")
+    public ServiceResponse getClientsFinal(@RequestParam String mobileNumber) throws JsonProcessingException {
+        return csdUseCase.getClientsFinal(mobileNumber);
     }
+
+    @GetMapping(path = "/getClientsInitiated")
+    public ServiceResponse getClientsInitiated(@RequestParam String mobileNumber) throws JsonProcessingException {
+        return csdUseCase.getClientsInitiated(mobileNumber);
+    }
+
     @GetMapping(path = "/getClient")
     public ServiceResponse getClient(@RequestParam String accountId) throws JsonProcessingException {
         return csdUseCase.getCLient(accountId);
+    }
+
+    @GetMapping(path = "/getClients")
+    public ServiceResponse getClients(@RequestParam String mobileNumber) throws JsonProcessingException {
+        return csdUseCase.getClients(mobileNumber);
     }
 }

@@ -5,13 +5,14 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Builder
-@Document(collection = "csd_entity")
+@Document("ClientRemarks")
 @Data
-public class CsdEntity {
+@Builder
+public class ClientRemarks {
     @Id
     private String id;
-    private String name;
-    private String emolyeeCode;
-    private String mobileNumber;
+    private String userId;
+    private String accountId;
+    private String remarks;
+    private String rejectedReason;
 }

@@ -1,5 +1,8 @@
 package com.bracepl.dbp_onboarding_service.domain.services;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.BankEntity;
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.ParitalAccountEntity;
+import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.NidVerificationResponse;
 import com.bracepl.dbp_onboarding_service.application.dtos.*;
 import com.bracepl.dbp_onboarding_service.config.SimpleMultipartFile;
@@ -127,48 +130,47 @@ public class AccountService implements AccountOpenUseCase {
     public ServiceResponse accountOpen(String partialAccountId) throws JsonProcessingException {
         Account account;
         Account temporaryData = partialAccountDomain.findById(partialAccountId);
-        if (temporaryData == null){
+        if (temporaryData == null) {
             log.info("Could not get data");
             return new ServiceResponse("Could not open BO account");
         }
-        if (!Pattern.matches(emailRegex, temporaryData.getEmail())){
-            log.info("INVALID EMAIL PROVIDED");
-            return new ServiceResponse("Invalid email provided");
-        }
-        if (!Pattern.matches(mobileRegex, temporaryData.getMobileNumber())){
-            log.info("INVALID MOBILE NUMBER PROVIDED");
-            return new ServiceResponse("Invalid mobile number provided");
-        }
-        if (accountDomain.isDuplicateAccount(temporaryData.getNid())){
+//        if (!Pattern.matches(emailRegex, temporaryData.getEmail())){
+//            log.info("INVALID EMAIL PROVIDED");
+//            return new ServiceResponse("Invalid email provided");
+//        }
+//        if (!Pattern.matches(mobileRegex, temporaryData.getMobileNumber())){
+//            log.info("INVALID MOBILE NUMBER PROVIDED");
+//            return new ServiceResponse("Invalid mobile number provided");
+//        }
+        if (accountDomain.isDuplicateAccount(temporaryData.getNid())) {
             log.info("DUPLICATE ACCOUNT FOUND WITH THIS NID {}", temporaryData.getNid());
             return new ServiceResponse("ALREADY HAS AN ACCOUNT WITH THIS NID");
-        }if (!accountDomain.findByMobileNumber(temporaryData.getMobileNumber())){
+        }
+        if (!accountDomain.findByMobileNumber(temporaryData.getMobileNumber())) {
             log.info("DUPLICATE ACCOUNT FOUND WITH THIS MOBILE NUMBER {}", temporaryData.getMobileNumber());
             return new ServiceResponse("ALREADY HAS AN ACCOUNT WITH THIS Mobile Number");
         }
-        if (temporaryData.getJointAccountname() == null){
+        if (temporaryData.getJointAccountname() == null) {
             account = accountDomain.save(temporaryData);
-        }
-        else if (temporaryData.isBoLinked()){
+        } else if (temporaryData.isBoLinked()) {
             account = accountDomain.saveWithBoLinked(temporaryData, temporaryData.getBoNumber());
-        }
-        else {
+        } else {
             account = accountDomain.saveWithJointAccount(temporaryData, this.populateToJointAccountModel(temporaryData));
         }
-//        RestTemplate restTemplate = new RestTemplate();
-//        String url = "http://localhost:8082/api/investor/add?mobileNumber=" + temporaryData.getMobileNumber();
-//        restTemplate.postForObject(url, null, String.class);
+        if (account == null) {
+            log.info("COULD NOT SAVE ACCOUNT DETAILS...");
+            return new ServiceResponse("Could not open BO account");
+        }
         log.info("ACCOUNT SAVED IN THE DATABASE");
-        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, true,true, false, true, true);
-        if(completionSection == null){
+        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, true, true, false, true, true);
+        if (completionSection == null) {
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
         }
-        if (!this.makePartialAccountActive(temporaryData)){
+        if (!this.makePartialAccountActive(temporaryData)) {
             log.info("COULD NOT MAKE PARTIAL ACCOUNT ACTIVE...");
         }
         log.info("ACCOUNT SAVED: {}", temporaryData);
-
 
 
         return new ServiceResponse("Account saved successfully", objectMapper.writeValueAsString(temporaryData.getMobileNumber()));
@@ -225,16 +227,16 @@ public class AccountService implements AccountOpenUseCase {
 //        if (!ekyc.isMatched()){
 //            return new ServiceResponse("Photo did not match with your NID.");
 //        }
-//        NidVerificationResponse nidVerificationResponse = accountDomain.callNidVerification(ekyc.getNid_no(), ekyc.getDate_of_birth(), photo, nidFront, "CLIENT_PORTAL");
-//        if (nidVerificationResponse == null){
-//            log.info("COULD NOT CALL API FOR NID VERIFICATION");
-//            return new ServiceResponse("NID verification failed");
-//        }
-//        double faceSimilarity = Double.parseDouble(nidVerificationResponse.getFaceSimilarity().replaceAll("%", ""));
-//        if (faceSimilarity < 50.0){
-//            log.info("FACE SIMILARITY IS LESS THAN 50%");
-//            return new ServiceResponse("Face is not similar with NID");
-//        }
+        NidVerificationResponse nidVerificationResponse = accountDomain.callNidVerification(ekyc.getNid_no(), ekyc.getDate_of_birth(), photo, nidFront, "CLIENT_PORTAL");
+        if (nidVerificationResponse == null){
+            log.info("COULD NOT CALL API FOR NID VERIFICATION");
+            return new ServiceResponse("NID verification failed");
+        }
+        double faceSimilarity = Double.parseDouble(nidVerificationResponse.getFaceSimilarity().replaceAll("%", ""));
+        if (faceSimilarity < 50.0){
+            log.info("FACE SIMILARITY IS LESS THAN 50%");
+            return new ServiceResponse("Face is not similar with NID");
+        }
         Account account = Account.builder()
                 .id(temporaryData == null ? null : temporaryData.getId())
                 .nidFront(this.convertToString(nidFront))
@@ -301,14 +303,15 @@ public class AccountService implements AccountOpenUseCase {
 
     @Override
     public ServiceResponse openAccountWithPersonalDetails(PersonalDetailsDto personalDetailsDto) throws JsonProcessingException {
+        Account temporaryData = new Account();
         if (ValidationUtils.hasNullOrEmptyField(personalDetailsDto)) {
             log.info("NULL VALUE FOUND WHILE CHECKING NULL VALUE...");
             return new ServiceResponse("Null value found");
         }
-        Account temporaryData = partialAccountDomain.findByNid(personalDetailsDto.getNid());
-        if (temporaryData != null) {
-            log.info("COULD NOT SAVE ACCOOUNT INFORMATION WITH THIS NID: {}", personalDetailsDto.getNid());
-            return new ServiceResponse("There is already an account with this NID");
+        temporaryData = partialAccountDomain.findByNid(personalDetailsDto.getNid());
+        if (temporaryData == null) {
+            log.info("EKYC FAILED: {}", personalDetailsDto.getNid());
+//            return new ServiceResponse("There is already an account with this NID");
         }
         temporaryData = partialAccountDomain.findByMoBileNumber(personalDetailsDto.getMobileNumber());
         if (temporaryData == null) {
@@ -591,19 +594,24 @@ public class AccountService implements AccountOpenUseCase {
     }
 
     @Override
-    public ServiceResponse editAccount(PartialAccount partialAccount) throws JsonProcessingException {
-        Account accountTarget = new Account();
-        Account existingAccount = partialAccountDomain.findByMoBileNumber(partialAccount.getMobileNumber());
-        if (existingAccount == null){
-            return new ServiceResponse("Could not find account with this mobile number");
+    public ServiceResponse editAccount(EditAccountRequest editAccountRequest) throws IOException {
+        Account existingAccount = partialAccountDomain.findById(editAccountRequest.getAccountId());
+        if (existingAccount == null) {
+            return new ServiceResponse("Could not find account with this account ID");
         }
 
-        Account savedAccount = partialAccountDomain.save(this.updatePartialAccount(accountTarget, existingAccount), false);
-        if (savedAccount == null){
+        // Update selectively based on section flags and non-null fields
+        updatePartialAccount(existingAccount, editAccountRequest);
+
+        Account savedAccount = partialAccountDomain.save(existingAccount, false);
+        if (savedAccount == null) {
             return new ServiceResponse("Could not edit account");
         }
-        return new ServiceResponse("Account information saved successfully", objectMapper.writeValueAsString(savedAccount));
+
+        return new ServiceResponse("Account information saved successfully",
+                objectMapper.writeValueAsString(savedAccount));
     }
+
 
     @Override
     public ServiceResponse searchAccount(String input) throws JsonProcessingException {
@@ -612,6 +620,24 @@ public class AccountService implements AccountOpenUseCase {
             return new ServiceResponse("Could not get any account");
         }
         return new ServiceResponse("Account information found", objectMapper.writeValueAsString(account));
+    }
+
+    @Override
+    public ServiceResponse getCompletionData(String mobileNumber) throws JsonProcessingException {
+        CompletionSection completionSection = accountDomain.getAccountCompletionRate(mobileNumber);
+        if (completionSection == null){
+            log.info("COULD NOT FIND ANY ACCOUNT WITH THIS MOBILE NUMBER: {} IN COMPLETION DATA TABLE", mobileNumber);
+            return new ServiceResponse("Could not get dashboard information", objectMapper.writeValueAsString(this.makeFalseCompletionSection(mobileNumber)));
+        }
+        Account temporaryData = partialAccountDomain.findByMoBileNumber(mobileNumber);
+        if (temporaryData == null){
+            log.info("COULD NOT FIND ANY ACCOUNT WITH THIS MOBILE NUMBER: {} IN PARTIAL ACCOUNT DATA TABLE", mobileNumber);
+            return new ServiceResponse("Could not get account information");
+        }
+        completionSection.setPartialAccount(temporaryData);
+        log.info("COMPLETION SECTION RESPONSE WITH PARTIAL ACCOUNT INFORMATION: {}", completionSection);
+        return new ServiceResponse("DashboardInformation information found", objectMapper.writeValueAsString(completionSection));
+
     }
 
     private Account populateTOAccountObject(AccountOpeningDto accountOpeningDto, MultipartFile signature, MultipartFile chequeLeaf) throws IOException {
@@ -792,6 +818,67 @@ public class AccountService implements AccountOpenUseCase {
         if (updates.getAccountNo() != null) target.setAccountNo(updates.getAccountNo());
         return target;
     }
+
+    private CompletionSection makeFalseCompletionSection(String mobileNumber){
+        return CompletionSection.builder()
+                .mobileNumber(mobileNumber)
+                .documents(false)
+                .nidPhotos(false)
+                .personalDetails(false)
+                .address(false)
+                .bankDetails(false)
+                .nomineeDetails(false)
+                .partialAccount(Account.builder()
+                        .mobileNumber(mobileNumber)
+                        .active(false)
+                        .build())
+                .build();
+    }
+
+    private void updatePartialAccount(Account target, EditAccountRequest request) throws IOException {
+        // PERSONAL DETAILS SECTION
+        if (request.isPersonalDetailsSection() && request.getPersonalDetailsDto() != null) {
+            var dto = request.getPersonalDetailsDto();
+
+            if (dto.getName() != null) target.setName(dto.getName());
+            if (dto.getGender() != null) target.setGender(dto.getGender());
+            if (dto.getNid() != null) target.setNid(dto.getNid());
+            if (dto.getFathersName() != null) target.setFathersName(dto.getFathersName());
+            if (dto.getMothersName() != null) target.setMothersName(dto.getMothersName());
+            if (dto.getDateOfBirth() != null) target.setDateOfBirth(dto.getDateOfBirth().toString());
+            if (dto.getResidency() != null) target.setResidency(dto.getResidency());
+        }
+
+        // ADDRESS SECTION
+        if (request.isAddressSection() && request.getAddressDto() != null) {
+            var dto = request.getAddressDto();
+
+            if (dto.getAddressLine1() != null) target.setAddressLine1(dto.getAddressLine1());
+            if (dto.getCity() != null) target.setCity(dto.getCity());
+            if (dto.getCountry() != null) target.setCountry(dto.getCountry());
+            if (dto.getState() != null) target.setState(dto.getState());
+            if (dto.getZipCode() != null) target.setZipCode(dto.getZipCode());
+        }
+
+        // BANK DETAILS SECTION
+        if (request.isBankDetailsSection() && request.getBankDetailsDto() != null) {
+            var dto = request.getBankDetailsDto();
+
+            if (dto.getBankName() != null) target.setBankName(dto.getBankName());
+            if (dto.getBranchName() != null) target.setBranchName(dto.getBranchName());
+            if (dto.getRoutingNumber() != null) target.setRoutingNumber(dto.getRoutingNumber());
+            if (dto.getAccountNo() != null) target.setAccountNo(dto.getAccountNo());
+        }
+
+        // DOCUMENTS SECTION
+        if (request.isDocumentsSection() && request.getDocumentsDto() != null) {
+            var dto = request.getDocumentsDto();
+            if (dto.getPhoto() != null) target.setPhoto(this.convertToString(dto.getPhoto()));
+            if (dto.getSignature() != null) target.setSignature(this.convertToString(dto.getSignature()));
+            if (dto.getChequeLeaf() != null) target.setChequeLeaf(this.convertToString(dto.getChequeLeaf()));
+        }
+    }
+
 
 
 

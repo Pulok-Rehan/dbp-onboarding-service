@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface AccountRepository extends MongoRepository<AccountEntity, String>, AccountRepositoryCustom {
     Optional<AccountEntity> findByInvestorCode(String investorCode);
     Optional<AccountEntity> findByMobileNumber(String mobileNo);
+    Optional<AccountEntity> findByEmailAddress(String emailAddress);
     Optional<AccountEntity> findByNid(String nid);
     @Query("{'$or': [ {'mobileNumber': ?0}, {'emailAddress': ?0}, {'investorCode': ?0} ] }")
     Optional<AccountEntity> findByMobileOrEmailOrInvestorCode(String input);
@@ -20,4 +21,6 @@ public interface AccountRepository extends MongoRepository<AccountEntity, String
     List<AccountEntity> findByRmId(String rmId);
     List<AccountEntity> findByCsdId(String rmId);
     List<AccountEntity> findByAccountStatusNot(AccountStatus status);
+    List<AccountEntity> findByCsdIdAndAccountStatusIn(String csId, List<String> statuses);
+
 }

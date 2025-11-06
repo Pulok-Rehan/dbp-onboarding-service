@@ -34,16 +34,22 @@ public class NomineeService implements NomineeUseCase {
     public ServiceResponse addNominee(NomineeDto nomineeDto, MultipartFile nomineeNidFront, MultipartFile nomineeNidBack, String mobilenumber) throws IOException {
         List<Nominee> nominees = new ArrayList<>();
             log.info("CALLING EKYC SERVICE...");
-            Ekyc ekyc = ekycService.callEkyc(nomineeNidFront, nomineeNidBack, mobilenumber);
-            log.info("EKYC SERVICE RESPONSE: {}", ekyc);
+//            Ekyc ekyc = ekycService.callEkyc(nomineeNidFront, nomineeNidBack, mobilenumber);
+//            log.info("EKYC SERVICE RESPONSE: {}", ekyc);
             Nominee nominee = Nominee.builder()
                     .nomineeNidFront(nomineeNidFront.getBytes())
                     .nomineeNidBack(nomineeNidBack.getBytes())
-                    .nomineeNidNumber(ekyc.getNid_no())
-                    .nomineeDob(ekyc.getDate_of_birth())
+                    .nomineeNidNumber(nomineeDto.getNomineeNid())
+//                    .nomineeDob(nomineeDto.getNomineeDob())
                     .relation(nomineeDto.getRelation())
                     .nomineePercentage(nomineeDto.getNomineePercentage() == 0 ? 100 : nomineeDto.getNomineePercentage())
                     .name(nomineeDto.getName())
+                    .city(nomineeDto.getName())
+                    .country(nomineeDto.getName())
+                    .state(nomineeDto.getName())
+                    .zipCode(nomineeDto.getName())
+                    .country(nomineeDto.getName())
+                    .mobileNumber(nomineeDto.getNomineeMobileNumber())
                     .build();
             log.info("ADDING NOMINEE...");
         String nomineeSaved = nomineeDomain.addNominee(nominee, mobilenumber);

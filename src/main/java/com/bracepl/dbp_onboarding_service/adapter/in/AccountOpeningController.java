@@ -1,5 +1,6 @@
 package com.bracepl.dbp_onboarding_service.adapter.in;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.dtos.*;
 import com.bracepl.dbp_onboarding_service.application.interfaces.AccountOpenUseCase;
 import com.bracepl.dbp_onboarding_service.domain.models.PartialAccount;
@@ -88,13 +89,18 @@ public class AccountOpeningController {
     }
 
     @PostMapping(path = "/edit")
-    public ServiceResponse editAccount(@RequestBody PartialAccount partialAccount) throws JsonProcessingException {
-        return openAccountUseCase.editAccount(partialAccount);
+    public ServiceResponse editAccount(@RequestBody EditAccountRequest editAccountRequest) throws IOException {
+        return openAccountUseCase.editAccount(editAccountRequest);
     }
 
     @GetMapping(path = "/search")
     public ServiceResponse searchAccount(@RequestParam String input) throws JsonProcessingException {
         return openAccountUseCase.searchAccount(input);
+    }
+
+    @GetMapping (path = "/getCompletionData")
+    public ServiceResponse getCompletionData(@RequestParam String mobileNumber) throws JsonProcessingException {
+        return openAccountUseCase.getCompletionData(mobileNumber);
     }
 
 }
