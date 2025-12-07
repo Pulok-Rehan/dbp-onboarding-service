@@ -26,5 +26,6 @@ public class CompletionSectionEntity {
     private boolean bankDetails;
     private boolean nomineeDetails;
     private boolean documents;
+    private boolean boPayment;
     private boolean isActive;
 }

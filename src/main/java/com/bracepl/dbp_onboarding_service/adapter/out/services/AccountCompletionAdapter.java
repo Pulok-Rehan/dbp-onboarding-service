@@ -18,7 +18,7 @@ public class AccountCompletionAdapter implements AccountCompletionDomain {
     }
 
     @Override
-    public CompletionSection accountCompletion(String mobileNumber, String email, boolean nidPhotos, boolean personalDetails, boolean address, boolean bankDetails, boolean nomineeDetails, boolean documents, boolean isActive) {
+    public CompletionSection accountCompletion(String mobileNumber, String email, boolean nidPhotos, boolean personalDetails, boolean address, boolean bankDetails, boolean nomineeDetails, boolean documents, boolean isActive, boolean boPayment) {
         try {
             CompletionSectionEntity savedAccountCompletion;
             CompletionSectionEntity completionSectionEntity = CompletionSectionEntity.builder()
@@ -31,6 +31,7 @@ public class AccountCompletionAdapter implements AccountCompletionDomain {
                     .nomineeDetails(nomineeDetails)
                     .documents(documents)
                     .isActive(isActive)
+                    .boPayment(boPayment)
                     .build();
 
             Optional<CompletionSectionEntity> optionalCompletionSectionEntity = accountCompletionRepository.findByMobileNumber(mobileNumber);

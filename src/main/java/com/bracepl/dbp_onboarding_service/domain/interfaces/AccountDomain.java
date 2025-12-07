@@ -1,6 +1,7 @@
 package com.bracepl.dbp_onboarding_service.domain.interfaces;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.NidVerification;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.NidVerificationResponse;
+import com.bracepl.dbp_onboarding_service.changeRequest.ChangeRequestEntity;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
 import com.bracepl.dbp_onboarding_service.domain.models.CompletionSection;
 import com.bracepl.dbp_onboarding_service.domain.models.Ekyc;
@@ -8,6 +9,7 @@ import com.bracepl.dbp_onboarding_service.domain.models.JointAccoint;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface AccountDomain {
     Account save(Account account);
@@ -25,4 +27,5 @@ public interface AccountDomain {
     NidVerification saveImagesForEkyc(MultipartFile nidFront, MultipartFile nidBack, MultipartFile photo, String investorCode, String boId, String nidNumber) throws IOException;
     NidVerificationResponse callNidVerification(String nidNumber, String dateOfBirth, MultipartFile photo, MultipartFile nidPhoto, String channel);
     CompletionSection getAccountCompletionRate(String mobileNumber);
+    List<ChangeRequestEntity> getChangeRequest(String mobileNumber);
 }

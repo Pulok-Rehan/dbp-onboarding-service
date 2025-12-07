@@ -49,8 +49,11 @@ public class ComplianceService implements ComplianceUseCase {
     }
 
     @Override
-    public ServiceResponse activateAccount(ActivateAccountDto activateAccountDto) throws JsonProcessingException {
-        boolean isActivated = complianceDomain.activateAccount(activateAccountDto.getAccountId(), activateAccountDto.getRmId());
+    public ServiceResponse activateAccount(List<ActivateAccountDto> activateAccountDto) throws JsonProcessingException {
+        boolean isActivated = false;
+        for (ActivateAccountDto activateAccount: activateAccountDto){
+            isActivated = complianceDomain.activateAccount(activateAccount.getAccountId(), activateAccount.getRmId());
+        }
         if (!isActivated){
             log.info("COULD NOT ACCEPT ACCOUNT...");
             return new ServiceResponse("Could not activate Account");

@@ -34,6 +34,11 @@ public class AuthController {
         return authUseCase.setNewPassword(newPasswordDto);
     }
 
+    @PostMapping(value = "/public/validate-token")
+    public ServiceResponse validateToken(@RequestParam String token) throws Exception {
+        return authUseCase.validateToken(token);
+    }
+
     @PostMapping(value = "/public/forget-password")
     public ServiceResponse forgetPassword(@RequestBody ForgotPasswordDto forgotPasswordDto, @RequestHeader String otp) throws IOException {
         return authUseCase.forgotPassword(forgotPasswordDto, otp);

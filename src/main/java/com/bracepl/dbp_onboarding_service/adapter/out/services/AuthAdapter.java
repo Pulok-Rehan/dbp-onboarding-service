@@ -26,6 +26,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -55,6 +56,7 @@ public class AuthAdapter implements AuthDomain {
     private final FailedLoginAttemptRepository failedLoginAttemptRepository;
     private final InternalUserRepository internalUserRepository;
     private final AccountRepository accountRepository;
+    private final WebClient webClient = WebClient.create();
 
     public AuthAdapter(UserCredentialRepository userCredentialRepository, RestTemplate restTemplate, ObjectMapper objectMapper, FailedLoginAttemptRepository failedLoginAttemptRepository, InternalUserRepository internalUserRepository, AccountRepository accountRepository) {
         this.userCredentialRepository = userCredentialRepository;
@@ -413,6 +415,27 @@ public class AuthAdapter implements AuthDomain {
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public boolean validateToken(String token) {
+        try {
+            return Boolean.TRUE.equals(webClient.post()
+                    .uri(keycloakUrl + "/realms/" + keycloakRealm + "/protocol/openid-connect/token/introspect")
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                    .bodyValue("token=" + token +
+                                    "&client_id=" + keycloakClientId+
+                            "&client_secret=" + keycloakClientSecret)
+                    .retrieve()
+                    .bodyToMono(Map.class)
+                    .map(body -> (Boolean) body.get("active"))
+                    .block());
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return false;
+        }
+
     }
 
 

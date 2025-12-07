@@ -14,6 +14,10 @@ public class BankDetailsDto {
     private String branchName;
     private String routingNumber;
     private String accountNo;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String rm;
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String preferedBranch;
     private String boType;
     private boolean boLinked;
     private String boNumber;

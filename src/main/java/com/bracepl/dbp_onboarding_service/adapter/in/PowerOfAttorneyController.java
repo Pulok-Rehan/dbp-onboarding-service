@@ -22,7 +22,7 @@ public class PowerOfAttorneyController {
             @RequestBody PowerOfAttorneyRequestDto powerOfAttorneyRequestDto,
             @RequestHeader String otp
     ) throws JsonProcessingException {
-        return powerOfAttorneyUseCase.grantPowerOfAttorney(powerOfAttorneyRequestDto.getMobileNumber(), powerOfAttorneyRequestDto.getRequestId(), otp);
+        return powerOfAttorneyUseCase.grantPowerOfAttorney(powerOfAttorneyRequestDto.getMobileNumber(), powerOfAttorneyRequestDto.getRequestId(), otp, powerOfAttorneyRequestDto.getPoAccessDto());
 
     }
 

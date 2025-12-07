@@ -3,6 +3,8 @@ package com.bracepl.dbp_onboarding_service.adapter.out.services;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.*;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.*;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.NidVerificationResponse;
+import com.bracepl.dbp_onboarding_service.changeRequest.ChangeRequestEntity;
+import com.bracepl.dbp_onboarding_service.changeRequest.repo.ChangeRequestRepository;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.AccountDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
@@ -56,8 +58,9 @@ public class AccountAdapter implements AccountDomain {
     private final SequenceGeneratorService sequenceGeneratorService;
     private final CsdRepository csdRepository;
     private final AccountCompletionRepository accountCompletionRepository;
+    private final ChangeRequestRepository changeRequestRepository;
 
-    public AccountAdapter(AccountRepository accountRepository, EkycService ekycService, RestTemplate restTemplate, ObjectMapper objectMapper, NidVerificationRepository nidVerificationRepository, SequenceGeneratorService sequenceGeneratorService, CsdRepository csdRepository, AccountCompletionRepository accountCompletionRepository) {
+    public AccountAdapter(AccountRepository accountRepository, EkycService ekycService, RestTemplate restTemplate, ObjectMapper objectMapper, NidVerificationRepository nidVerificationRepository, SequenceGeneratorService sequenceGeneratorService, CsdRepository csdRepository, AccountCompletionRepository accountCompletionRepository, ChangeRequestRepository changeRequestRepository) {
         this.accountRepository = accountRepository;
         this.ekycService = ekycService;
         this.restTemplate = restTemplate;
@@ -66,6 +69,7 @@ public class AccountAdapter implements AccountDomain {
         this.sequenceGeneratorService = sequenceGeneratorService;
         this.csdRepository = csdRepository;
         this.accountCompletionRepository = accountCompletionRepository;
+        this.changeRequestRepository = changeRequestRepository;
     }
 
     @Override
@@ -356,6 +360,15 @@ public class AccountAdapter implements AccountDomain {
             e.printStackTrace();
             return null;
         }
+    }
+
+    @Override
+    public List<ChangeRequestEntity> getChangeRequest(String mobileNumber) {
+        List<ChangeRequestEntity> changeRequest = changeRequestRepository.findByRequestedFor(mobileNumber);
+        if (changeRequest.isEmpty()){
+            return null;
+        }
+        return changeRequest;
     }
 
     private AccountEntity populateToAccountEntity(Account account, String csdId){

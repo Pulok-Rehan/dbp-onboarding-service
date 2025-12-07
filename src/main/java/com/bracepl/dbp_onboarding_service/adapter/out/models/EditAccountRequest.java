@@ -23,5 +23,6 @@ public class EditAccountRequest {
     private DocumentsDto documentsDto;
     private String accountId;
     private String requestedBy;
+    private String remarks;
 
 }

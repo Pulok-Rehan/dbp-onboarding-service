@@ -33,5 +33,6 @@ public interface AuthDomain {
     String setNewPassword(String userId, String newPassword, String accessToken);
     String forgotPassword(String userId, String password, String accessToken);
     InternalUser findByEmployeeCode(String employeeCode);
+    boolean validateToken(String token);
 
 }

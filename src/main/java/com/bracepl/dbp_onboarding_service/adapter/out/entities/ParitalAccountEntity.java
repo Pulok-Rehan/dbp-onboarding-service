@@ -49,6 +49,8 @@ public class ParitalAccountEntity {
     private String accountStatus;
     private String transactionStatus;
     private String csdId;
+    private String rm;
+    private String preferedBranch;
     private boolean csdContacted;
     private String remark;
 }

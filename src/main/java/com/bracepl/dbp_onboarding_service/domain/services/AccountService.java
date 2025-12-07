@@ -5,8 +5,13 @@ import com.bracepl.dbp_onboarding_service.adapter.out.entities.ParitalAccountEnt
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.NidVerificationResponse;
 import com.bracepl.dbp_onboarding_service.application.dtos.*;
+import com.bracepl.dbp_onboarding_service.changeRequest.ChangeRequestEntity;
+import com.bracepl.dbp_onboarding_service.changeRequest.SectionChangeRequest;
+import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
+import com.bracepl.dbp_onboarding_service.changeRequest.dto.SectionChangeDto;
 import com.bracepl.dbp_onboarding_service.config.SimpleMultipartFile;
 import com.bracepl.dbp_onboarding_service.domain.enums.BoType;
+import com.bracepl.dbp_onboarding_service.domain.interfaces.RmDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.*;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.AccountCompletionDomain;
 import com.bracepl.dbp_onboarding_service.application.interfaces.AccountOpenUseCase;
@@ -55,14 +60,16 @@ public class AccountService implements AccountOpenUseCase {
     private final ObjectMapper objectMapper;
     private final AccountCompletionDomain accountCompletionDomain;
     private final AuthService authService;
+    private final RmDomain rmDomain;
 
-    public AccountService(AccountDomain accountDomain, PartialAccountDomain partialAccountDomain, BankDomain bankDomain, ObjectMapper objectMapper, AccountCompletionDomain accountCompletionDomain, AuthService authService) {
+    public AccountService(AccountDomain accountDomain, PartialAccountDomain partialAccountDomain, BankDomain bankDomain, ObjectMapper objectMapper, AccountCompletionDomain accountCompletionDomain, AuthService authService, RmDomain rmDomain) {
         this.accountDomain = accountDomain;
         this.partialAccountDomain = partialAccountDomain;
         this.bankDomain = bankDomain;
         this.objectMapper = objectMapper;
         this.accountCompletionDomain = accountCompletionDomain;
         this.authService = authService;
+        this.rmDomain = rmDomain;
     }
 
     @Override
@@ -113,7 +120,7 @@ public class AccountService implements AccountOpenUseCase {
             return new ServiceResponse("Could not save account");
         }
         log.info("ACCOUNT SAVED IN THE DATABASE");
-        CompletionSection completionSection = accountCompletionDomain.accountCompletion(account.getMobileNumber(), account.getEmail(), true, true, true,true, false, true, true);
+        CompletionSection completionSection = accountCompletionDomain.accountCompletion(account.getMobileNumber(), account.getEmail(), true, true, true,true, false, true, true, true);
         if(completionSection == null){
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
@@ -162,7 +169,7 @@ public class AccountService implements AccountOpenUseCase {
             return new ServiceResponse("Could not open BO account");
         }
         log.info("ACCOUNT SAVED IN THE DATABASE");
-        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, true, true, false, true, true);
+        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, true, true, false, true, true, true);
         if (completionSection == null) {
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
@@ -227,16 +234,16 @@ public class AccountService implements AccountOpenUseCase {
 //        if (!ekyc.isMatched()){
 //            return new ServiceResponse("Photo did not match with your NID.");
 //        }
-        NidVerificationResponse nidVerificationResponse = accountDomain.callNidVerification(ekyc.getNid_no(), ekyc.getDate_of_birth(), photo, nidFront, "CLIENT_PORTAL");
-        if (nidVerificationResponse == null){
-            log.info("COULD NOT CALL API FOR NID VERIFICATION");
-            return new ServiceResponse("NID verification failed");
-        }
-        double faceSimilarity = Double.parseDouble(nidVerificationResponse.getFaceSimilarity().replaceAll("%", ""));
-        if (faceSimilarity < 50.0){
-            log.info("FACE SIMILARITY IS LESS THAN 50%");
-            return new ServiceResponse("Face is not similar with NID");
-        }
+//        NidVerificationResponse nidVerificationResponse = accountDomain.callNidVerification(ekyc.getNid_no(), ekyc.getDate_of_birth(), photo, nidFront, "CLIENT_PORTAL");
+//        if (nidVerificationResponse == null){
+//            log.info("COULD NOT CALL API FOR NID VERIFICATION");
+//            return new ServiceResponse("NID verification failed");
+//        }
+//        double faceSimilarity = Double.parseDouble(nidVerificationResponse.getFaceSimilarity().replaceAll("%", ""));
+//        if (faceSimilarity < 50.0){
+//            log.info("FACE SIMILARITY IS LESS THAN 50%");
+//            return new ServiceResponse("Face is not similar with NID");
+//        }
         Account account = Account.builder()
                 .id(temporaryData == null ? null : temporaryData.getId())
                 .nidFront(this.convertToString(nidFront))
@@ -253,7 +260,7 @@ public class AccountService implements AccountOpenUseCase {
             log.info("COULD NOT SAVE PARTIAL DATA...");
             return new ServiceResponse("Could not save partial data");
         }
-        CompletionSection completionSection = accountCompletionDomain.accountCompletion(savedAccount.getMobileNumber(), savedAccount.getEmail(), true, false, false,false,false,false, false);
+        CompletionSection completionSection = accountCompletionDomain.accountCompletion(savedAccount.getMobileNumber(), savedAccount.getEmail(), true, false, false,false,false,false, false, true);
         if(completionSection == null){
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
@@ -290,7 +297,7 @@ public class AccountService implements AccountOpenUseCase {
             log.info("COULD NOT SAVE PARTIAL DATA...");
             return new ServiceResponse("Could not save partial data");
         }
-        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, true,true,false,true, false);
+        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, true,true,false,true, false, true);
         if(completionSection == null){
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
@@ -332,7 +339,7 @@ public class AccountService implements AccountOpenUseCase {
             log.info("COULD NOT SAVE PARTIAL DATA...");
             return new ServiceResponse("Could not save partial data");
         }
-        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, false, false, false, false, false);
+        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, false, false, false, false, false, true);
         if (completionSection == null) {
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
@@ -364,7 +371,7 @@ public class AccountService implements AccountOpenUseCase {
         }
         CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(),
                 true, true, true
-                ,false,false,false, false);
+                ,false,false,false, false, true);
         if(completionSection == null){
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
@@ -387,6 +394,8 @@ public class AccountService implements AccountOpenUseCase {
             log.info("COULD NOT SAVE ACCOOUNT INFORMATION WITH THIS MOBILE NUMBER: {}", bankDetailsDto.getMobileNumber());
             return new ServiceResponse("Could not save account information");
         }
+        temporaryData.setRmId(bankDetailsDto.getRm());
+        temporaryData.setPreferedBranch(bankDetailsDto.getPreferedBranch());
         temporaryData.setBoType(bankDetailsDto.getBoType());
         temporaryData.setBankName(bankDetailsDto.getBankName());
         temporaryData.setBranchName(bankDetailsDto.getBranchName());
@@ -409,7 +418,7 @@ public class AccountService implements AccountOpenUseCase {
             log.info("COULD NOT SAVE PARTIAL DATA...");
             return new ServiceResponse("Could not save partial data");
         }
-        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, true, true, false, false, false);
+        CompletionSection completionSection = accountCompletionDomain.accountCompletion(temporaryData.getMobileNumber(), temporaryData.getEmail(), true, true, true, true, false, false, false, true);
         if (completionSection == null) {
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
@@ -443,7 +452,7 @@ public class AccountService implements AccountOpenUseCase {
             log.info("COULD NOT SAVE PARTIAL DATA...");
             return new ServiceResponse("Could not save partial data");
         }
-        CompletionSection completionSection = accountCompletionDomain.accountCompletion(savedAccount.getMobileNumber(), savedAccount.getEmail(), true, true, true,true,false,false, false);
+        CompletionSection completionSection = accountCompletionDomain.accountCompletion(savedAccount.getMobileNumber(), savedAccount.getEmail(), true, true, true,true,false,false, false, true);
         if(completionSection == null){
             log.info("COULD NOT SAVE ACCOUNT COMPLETION DETAILS IN THE DATABASE...");
             return new ServiceResponse("Could not save Account Completion details");
@@ -594,16 +603,20 @@ public class AccountService implements AccountOpenUseCase {
     }
 
     @Override
-    public ServiceResponse editAccount(EditAccountRequest editAccountRequest) throws IOException {
-        Account existingAccount = partialAccountDomain.findById(editAccountRequest.getAccountId());
+    public ServiceResponse editAccount(EditAccountRequest changeRequestDto) throws IOException {
+        Account existingAccount = partialAccountDomain.findById(changeRequestDto.getAccountId());
         if (existingAccount == null) {
             return new ServiceResponse("Could not find account with this account ID");
         }
 
-        // Update selectively based on section flags and non-null fields
-        updatePartialAccount(existingAccount, editAccountRequest);
+        Account finalAccount = accountDomain.findByMobileNumberForForPowerOfAttorney(existingAccount.getMobileNumber());
+        if (finalAccount == null) {
+            return new ServiceResponse("Could not find account with this account ID");
+        }
 
-        Account savedAccount = partialAccountDomain.save(existingAccount, false);
+        Account updatedAccount = this.updateAccount(finalAccount, existingAccount);
+
+        Account savedAccount = partialAccountDomain.save(updatedAccount, false);
         if (savedAccount == null) {
             return new ServiceResponse("Could not edit account");
         }
@@ -635,9 +648,28 @@ public class AccountService implements AccountOpenUseCase {
             return new ServiceResponse("Could not get account information");
         }
         completionSection.setPartialAccount(temporaryData);
+        List<ChangeRequestEntity> changeRequest = accountDomain.getChangeRequest(mobileNumber);
+        if (changeRequest.isEmpty() || changeRequest == null){
+            completionSection.setChangeRequest(changeRequest);
+        }
+        completionSection.setChangeRequest(changeRequest);
         log.info("COMPLETION SECTION RESPONSE WITH PARTIAL ACCOUNT INFORMATION: {}", completionSection);
         return new ServiceResponse("DashboardInformation information found", objectMapper.writeValueAsString(completionSection));
 
+    }
+
+    @Override
+    public ServiceResponse boPayment(String mobileNumber) throws JsonProcessingException {
+        CompletionSection completionSection = accountDomain.getAccountCompletionRate(mobileNumber);
+        if (completionSection == null){
+            completionSection = accountCompletionDomain.accountCompletion(mobileNumber, "", false, false, false, false, false, false, false, true);
+        }
+        completionSection.setBoPayment(true);
+        completionSection = accountCompletionDomain.accountCompletion(completionSection.getMobileNumber(), completionSection.getPartialAccount().getEmail(), completionSection.isNidPhotos(), completionSection.isPersonalDetails(), completionSection.isAddress(), completionSection.isBankDetails(), completionSection.isNomineeDetails(), completionSection.isDocuments(), false, true);
+        if (completionSection == null){
+            return new ServiceResponse("Could not add completion section");
+        }
+        return new ServiceResponse("Completion section added", objectMapper.writeValueAsString(completionSection));
     }
 
     private Account populateTOAccountObject(AccountOpeningDto accountOpeningDto, MultipartFile signature, MultipartFile chequeLeaf) throws IOException {
@@ -796,7 +828,7 @@ public class AccountService implements AccountOpenUseCase {
         return nidVerificationResponseList.get(randomIndex);
     }
 
-    private Account updatePartialAccount(Account target, Account updates) {
+    private Account updateAccount(Account target, Account updates) {
         if (updates.getName() != null) target.setName(updates.getName());
         if (updates.getGender() != null) target.setGender(updates.getGender());
         if (updates.getNid() != null) target.setNid(updates.getNid());

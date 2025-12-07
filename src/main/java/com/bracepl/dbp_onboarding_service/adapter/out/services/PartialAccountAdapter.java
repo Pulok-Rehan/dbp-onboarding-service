@@ -10,6 +10,7 @@ import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.interfaces.PartialAccountDomain;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,6 +26,10 @@ import java.util.UUID;
 
 @Component
 public class PartialAccountAdapter implements PartialAccountDomain {
+    @Value("${clientPortalRm}")
+    private String clientPortalRm;
+    @Value("${clientPortalBranch}")
+    private String clientPortalBranch;
     private final PartialAccountRepository partialAccountRepository;
     private final CsdRepository csdRepository;
 
@@ -146,6 +151,8 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .isActive(isActive)
                 .accountStatus(AccountStatus.INITIATED.name())
                 .csdId(csdId)
+                .rm(account.getRmId()== null ? clientPortalRm : account.getRmId())
+                .preferedBranch(account.getPreferedBranch()== null ? clientPortalBranch : account.getPreferedBranch())
                 .build();
     }
 
@@ -183,6 +190,8 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .photo(account.getPhoto())
                 .boLinked(account.isBoLinked())
                 .isActive(isActive)
+                .rm(account.getRmId()== null ? clientPortalRm : account.getRmId())
+                .preferedBranch(account.getPreferedBranch()== null ? clientPortalBranch : account.getPreferedBranch())
                 .jointAccountEntity(JointAccountEntity.builder()
                         .name(account.getJointAccountname())
                         .email(account.getJointAccountEmail())
@@ -222,6 +231,8 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .photo(account.getPhoto())
                 .signature(account.getSignature())
                 .chequeLeaf(account.getChequeLeaf())
+                .rm(account.getRmId()== null ? clientPortalRm : account.getRmId())
+                .preferedBranch(account.getPreferedBranch()== null ? clientPortalBranch : account.getPreferedBranch())
                 .jointAccountEntity(JointAccountEntity.builder()
                         .name(account.getJointAccountname())
                         .address(account.getJointAccountAddress())
@@ -262,6 +273,8 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .residency(account.getResidency())
                 .active(account.isActive())
                 .transactionStatus(account.getTransactionStatus())
+                .rmId(account.getRm())
+                .preferedBranch(account.getPreferedBranch())
                 .build();
     }
 
@@ -298,6 +311,8 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .jointAccountPhoto(account.getJointAccountEntity() != null ? account.getJointAccountEntity().getJointAccountPhoto() : null)
                 .jointAccountNidBack(account.getJointAccountEntity() != null ? account.getJointAccountEntity().getJointAccountNidBack() : null)
                 .jointAccountNidFront(account.getJointAccountEntity() != null ? account.getJointAccountEntity().getJointAccountNidFront() : null)
+                .rmId(account.getRm())
+                .preferedBranch(account.getPreferedBranch())
                 .build();
     }
 

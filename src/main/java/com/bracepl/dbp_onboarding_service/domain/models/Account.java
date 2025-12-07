@@ -57,6 +57,7 @@ public class Account {
     private List<String> powerOfAttorneyByAccounts;
     private AccountStatus accountStatus;
     private String rmId;
+    private String preferedBranch;
     private boolean rmAccepted;
     private boolean rmContacted;
     private String csdId;

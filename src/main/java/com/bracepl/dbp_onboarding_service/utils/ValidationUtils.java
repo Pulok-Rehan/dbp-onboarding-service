@@ -15,29 +15,40 @@ public class ValidationUtils {
             log.error("PASSED NULL OBJECT...");
             return true;
         }
+
         Field[] fields = obj.getClass().getDeclaredFields();
         for (Field field : fields) {
+            // Skip the fieldsToUpdate field
+            if ("fieldsToUpdate".equals(field.getName())) {
+                continue;
+            }
+
             field.setAccessible(true);
             try {
                 Object value = field.get(obj);
+
                 if (value == null) {
-                    log.error("{} IS NULL", field);
+                    log.error("{} IS NULL", field.getName());
                     return true;
                 }
+
                 if (value instanceof String && !StringUtils.hasText((String) value)) {
-                    log.error("{} IS EMPTY", field);
+                    log.error("{} IS EMPTY", field.getName());
                     return true;
                 }
+
                 if (value instanceof MultipartFile && ((MultipartFile) value).isEmpty()) {
-                    log.error("{} HAS NO FILE", field);
+                    log.error("{} HAS NO FILE", field.getName());
                     return true;
                 }
+
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
         }
         return false;
     }
+
 
     public static boolean hasEmptyFile(List<MultipartFile> files){
         for(MultipartFile file: files){

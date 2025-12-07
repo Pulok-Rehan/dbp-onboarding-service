@@ -222,6 +222,15 @@ public class AuthService implements AuthUseCase {
         return new ServiceResponse("Password Changed Successfully", passwordChanged);
     }
 
+    @Override
+    public ServiceResponse validateToken(String token) throws Exception {
+        boolean isValid = authDomain.validateToken(token);
+        if (isValid){
+            return new ServiceResponse("Token is valid", String.valueOf(isValid));
+        }
+        return new ServiceResponse("Invalid Token provided");
+    }
+
     private String generateTempPassword() {
         String password = UUID.randomUUID().toString().replaceAll("[^A-Za-z0-9]", "").substring(0, 6);
         log.info("PASSWORD IS: {}", password);

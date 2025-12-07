@@ -4,6 +4,7 @@ import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchReques
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.dtos.IdDto;
 import com.bracepl.dbp_onboarding_service.application.interfaces.SettlementUseCase;
+import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.web.bind.annotation.*;
@@ -50,7 +51,7 @@ public class SettlementController {
     }
 
     @PostMapping(path = "/require-edit")
-    public ServiceResponse requireEdit(@RequestBody EditAccountRequest editAccountRequest) throws JsonProcessingException {
-        return settlementUseCase.requireEdit(editAccountRequest);
+    public ServiceResponse requireEdit(@RequestBody ChangeRequestDto changeRequestDto) throws JsonProcessingException {
+        return settlementUseCase.requireEdit(changeRequestDto);
     }
 }

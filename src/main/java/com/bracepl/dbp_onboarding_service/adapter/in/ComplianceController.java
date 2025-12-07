@@ -9,6 +9,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/onboarding/compliance")
 public class ComplianceController {
@@ -19,7 +21,7 @@ public class ComplianceController {
     }
 
     @PostMapping(path = "/activateAccount")
-    public ServiceResponse acceptAccount(@RequestBody ActivateAccountDto activateAccountDto) throws JsonProcessingException {
+    public ServiceResponse acceptAccount(@RequestBody List<ActivateAccountDto> activateAccountDto) throws JsonProcessingException {
         return complianceUseCase.activateAccount(activateAccountDto);
     }
 

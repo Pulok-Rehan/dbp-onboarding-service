@@ -2,20 +2,27 @@ package com.bracepl.dbp_onboarding_service.adapter.out.services;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.AccountEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.EditRequired;
-import com.bracepl.dbp_onboarding_service.adapter.out.entities.ParitalAccountEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.AccountRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.EditRequiredRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.PartialAccountRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
+import com.bracepl.dbp_onboarding_service.changeRequest.AccountSection;
+import com.bracepl.dbp_onboarding_service.changeRequest.ChangeRequestEntity;
+import com.bracepl.dbp_onboarding_service.changeRequest.FieldChangeDetail;
+import com.bracepl.dbp_onboarding_service.changeRequest.SectionChangeRequest;
+import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
+import com.bracepl.dbp_onboarding_service.changeRequest.dto.FieldChangeDto;
+import com.bracepl.dbp_onboarding_service.changeRequest.dto.SectionChangeDto;
+import com.bracepl.dbp_onboarding_service.changeRequest.repo.ChangeRequestRepository;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.SettlementDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
-import com.bracepl.dbp_onboarding_service.domain.models.PartialAccount;
 import com.bracepl.dbp_onboarding_service.domain.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -24,11 +31,13 @@ public class SettlementAdapter implements SettlementDomain {
     private final AccountRepository accountRepository;
     private final PartialAccountRepository partialAccountRepository;
     private final EditRequiredRepository editRequiredRepository;
+    private final ChangeRequestRepository changeRequestRepository;
 
-    public SettlementAdapter(AccountRepository accountRepository, PartialAccountRepository partialAccountRepository, EditRequiredRepository editRequiredRepository) {
+    public SettlementAdapter(AccountRepository accountRepository, PartialAccountRepository partialAccountRepository, EditRequiredRepository editRequiredRepository, ChangeRequestRepository changeRequestRepository) {
         this.accountRepository = accountRepository;
         this.partialAccountRepository = partialAccountRepository;
         this.editRequiredRepository = editRequiredRepository;
+        this.changeRequestRepository = changeRequestRepository;
     }
 
     @Override
@@ -83,31 +92,78 @@ public class SettlementAdapter implements SettlementDomain {
     }
 
     @Override
-    public String requiresEdit(EditAccountRequest editAccountRequest) {
-        Optional<ParitalAccountEntity> accountEntityOptional = partialAccountRepository.findById(editAccountRequest.getAccountId());
-        if (accountEntityOptional.isEmpty()) {
-            log.info("COULD NOT GET ACCOUNT INFORMATION WITH THIS ID: {}", editAccountRequest.getAccountId());
-            return "";
+    public String requiresEdit(ChangeRequestDto changeRequestDto) {
+
+        try {
+            if (changeRequestDto.getAccountId() == null){
+                return null;
+            }
+            Optional<AccountEntity> partialAccount = accountRepository.findById(changeRequestDto.getAccountId());
+            if (partialAccount.isEmpty()){
+                return null;
+            }
+            ChangeRequestEntity changeRequest = ChangeRequestEntity.builder()
+                    .requestedAt(LocalDateTime.now())
+                    .requestedBy(changeRequestDto.getAdminId())
+                    .accountId(changeRequestDto.getAccountId())
+                    .partialAccountId(partialAccount.get().getId())
+                    .requestedFor(partialAccount.get().getMobileNumber())
+                    .adminRemarks(changeRequestDto.getRemarks())
+                    .build();
+            List<SectionChangeRequest> sectionChangeRequestList = new ArrayList<>();
+            List<FieldChangeDetail> fieldChangeDetailList = new ArrayList<>();
+            AccountSection accountSection = AccountSection.EKYC;
+            for (SectionChangeDto sectionChangeDto : changeRequestDto.getSectionChanges()){
+                int stepNumber = 0;
+                // EKYC, PERSONAL_DETAILS, ADDRESS, BANK_DETAILS, CLIENT_TYPE, DOCUMENTS
+                if (sectionChangeDto.getSection().equalsIgnoreCase("EKYC")){
+                    stepNumber = 1;
+
+                } else if (sectionChangeDto.getSection().equalsIgnoreCase("PERSONAL_DETAILS")) {
+                    stepNumber = 2;
+                    accountSection = AccountSection.PERSONAL_DETAILS;
+                }
+                else if (sectionChangeDto.getSection().equalsIgnoreCase("ADDRESS")) {
+                    stepNumber = 3;
+                    accountSection = AccountSection.ADDRESS;
+                }
+                else if (sectionChangeDto.getSection().equalsIgnoreCase("BANK_DETAILS")) {
+                    stepNumber = 4;
+                    accountSection = AccountSection.BANK_DETAILS;
+                }
+                else if (sectionChangeDto.getSection().equalsIgnoreCase("CLIENT_TYPE")) {
+                    stepNumber = 5;
+                    accountSection = AccountSection.CLIENT_TYPE;
+                }
+                else {
+                    stepNumber = 6;
+                    accountSection = AccountSection.DOCUMENTS;
+                }
+                for (FieldChangeDto fieldChangeDto : sectionChangeDto.getFields()){
+                    fieldChangeDetailList.add(FieldChangeDetail.builder()
+                            .fieldName(fieldChangeDto.getFieldName())
+                            .currentValue(fieldChangeDto.getCurrentValue())
+                            .isMandatory(true)
+                            .reason(fieldChangeDto.getReason())
+                            .suggestedValue(fieldChangeDto.getSuggestedValue() == null ? "Please change it" : fieldChangeDto.getSuggestedValue())
+                            .build());
+                }
+
+                SectionChangeRequest sectionChangeRequest = SectionChangeRequest.builder()
+                        .section(accountSection)
+                        .completed(false)
+                        .fields(fieldChangeDetailList)
+                        .build();
+            }
+            changeRequest.setSectionChanges(sectionChangeRequestList);
+            changeRequestRepository.save(changeRequest);
+            return "Change request sent";
+        }
+        catch (Exception e){
+            e.printStackTrace();
+            return null;
         }
 
-        Optional<EditRequired> editRequiredOptional = editRequiredRepository.findByAccountId(editAccountRequest.getAccountId());
-
-        EditRequired editRequired;
-
-        if (editRequiredOptional.isEmpty()) {
-            // Create new entry if none exists
-            editRequired = EditRequired.fromRequest(editAccountRequest);
-            log.info("CREATED NEW EditRequired ENTRY FOR ACCOUNT ID: {}", editAccountRequest.getAccountId());
-        } else {
-            // Update existing record with provided values only
-            editRequired = editRequiredOptional.get();
-            updateEditRequired(editRequired, editAccountRequest);
-            log.info("UPDATED EXISTING EditRequired ENTRY FOR ACCOUNT ID: {}", editAccountRequest.getAccountId());
-        }
-
-        editRequiredRepository.save(editRequired);
-
-        return "Account Update Request sent";
 
 
     }

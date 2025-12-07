@@ -3,6 +3,7 @@ package com.bracepl.dbp_onboarding_service.adapter.in;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.dtos.*;
 import com.bracepl.dbp_onboarding_service.application.interfaces.AccountOpenUseCase;
+import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
 import com.bracepl.dbp_onboarding_service.domain.models.PartialAccount;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.security.Provider;
 
 @RestController
 @RequestMapping("/onboarding/api")
@@ -89,8 +91,8 @@ public class AccountOpeningController {
     }
 
     @PostMapping(path = "/edit")
-    public ServiceResponse editAccount(@RequestBody EditAccountRequest editAccountRequest) throws IOException {
-        return openAccountUseCase.editAccount(editAccountRequest);
+    public ServiceResponse editAccount(@RequestBody EditAccountRequest changeRequestDto) throws IOException {
+        return openAccountUseCase.editAccount(changeRequestDto);
     }
 
     @GetMapping(path = "/search")
@@ -101,6 +103,16 @@ public class AccountOpeningController {
     @GetMapping (path = "/getCompletionData")
     public ServiceResponse getCompletionData(@RequestParam String mobileNumber) throws JsonProcessingException {
         return openAccountUseCase.getCompletionData(mobileNumber);
+    }
+
+    @PostMapping (path = "/bo-payment")
+    public ServiceResponse boPayment(@RequestParam String mobileNumber) throws JsonProcessingException {
+        return openAccountUseCase.boPayment(mobileNumber);
+    }
+
+    @GetMapping(path = "/getEditRequest")
+    public ServiceResponse getEditRequest(@RequestParam String mobileNumber) throws JsonProcessingException {
+        return openAccountUseCase.searchAccount(mobileNumber);
     }
 
 }

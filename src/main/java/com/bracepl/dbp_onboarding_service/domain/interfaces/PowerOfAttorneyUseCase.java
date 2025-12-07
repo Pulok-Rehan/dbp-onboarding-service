@@ -1,12 +1,13 @@
 package com.bracepl.dbp_onboarding_service.domain.interfaces;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.PoAccessDto;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.util.Map;
 
 public interface PowerOfAttorneyUseCase {
-    ServiceResponse grantPowerOfAttorney(String mobileNumber, String granteeId, String otp) throws JsonProcessingException;
+    ServiceResponse grantPowerOfAttorney(String mobileNumber, String granteeId, String otp, PoAccessDto poAccessDto) throws JsonProcessingException;
     ServiceResponse revokePowerOfAttorney(String grantorId, String granteeId, String otp) throws JsonProcessingException;
 //    ServiceResponse getInvestor(Map<String, String> param) throws JsonProcessingException;
 }

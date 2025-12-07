@@ -3,6 +3,7 @@ package com.bracepl.dbp_onboarding_service.domain.services;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.interfaces.SettlementUseCase;
+import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.SettlementDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Service
 @Slf4j
@@ -83,13 +85,13 @@ public class SettlementService implements SettlementUseCase {
     }
 
     @Override
-    public ServiceResponse requireEdit(EditAccountRequest editAccountRequest) throws JsonProcessingException {
-        log.info("EDIT REQUEST FOR ACCOUNTS FOR SETTLEMENT...{}", editAccountRequest.toString());
-        String account = settlementDomain.requiresEdit(editAccountRequest);
-        if (account == ""){
+    public ServiceResponse requireEdit(ChangeRequestDto changeRequestDto) throws JsonProcessingException {
+        log.info("EDIT REQUEST FOR ACCOUNTS FOR SETTLEMENT...{}", changeRequestDto.getAccountId());
+        String account = settlementDomain.requiresEdit(changeRequestDto);
+        if (Objects.equals(account, "") || account == null){
             log.info("COULD NOT GET ACCOUNT OPENING REQUEST...");
             return new ServiceResponse("Could not get account opening request");
         }
-        return new ServiceResponse("Account opening request retrived", objectMapper.writeValueAsString(account));
+        return new ServiceResponse("Account opening request retrived", account);
     }
 }

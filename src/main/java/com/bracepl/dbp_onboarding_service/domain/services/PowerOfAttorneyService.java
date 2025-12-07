@@ -1,5 +1,7 @@
 package com.bracepl.dbp_onboarding_service.domain.services;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.PoAccessDto;
+import com.bracepl.dbp_onboarding_service.application.dtos.OtpRequiredDto;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.AccountDomain;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.NotificationDomain;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.PowerOfAttorneyUseCase;
@@ -29,7 +31,7 @@ public class PowerOfAttorneyService implements PowerOfAttorneyUseCase {
     }
 
     @Override
-    public ServiceResponse grantPowerOfAttorney(String mobileNumber, String granteeId, String otp) throws JsonProcessingException {
+    public ServiceResponse grantPowerOfAttorney(String mobileNumber, String granteeId, String otp, PoAccessDto poAccessDto) throws JsonProcessingException {
         List<String> powerOfAttorneyForList = new ArrayList<>();
         List<String> powerOfAttorneyByList = new ArrayList<>();
         Account account = accountDomain.findByMobileNumberForForPowerOfAttorney(mobileNumber);
@@ -68,7 +70,7 @@ public class PowerOfAttorneyService implements PowerOfAttorneyUseCase {
             log.info("SENDING OTP...");
             notificationDomain.sendOtp(granteeAccount.getEmail(), granteeAccount.getMobileNumber());
             log.info("OTP SENT SUCCESSFULLY...");
-            return new ServiceResponse("Otp Required", "421");
+            return new ServiceResponse("Otp Required", objectMapper.writeValueAsString(new OtpRequiredDto("421", granteeAccount.getMobileNumber(), granteeAccount.getEmail())));
         } log.info("OTP SENT SUCCESSFULLY...");
         if (!notificationDomain.validateOtp(granteeAccount.getMobileNumber(), otp)){
             log.info("OTP DID NOT MATCH...");

@@ -4,6 +4,6 @@ import com.bracepl.dbp_onboarding_service.domain.models.CompletionSection;
 import org.bson.types.ObjectId;
 
 public interface AccountCompletionDomain {
-    CompletionSection accountCompletion(String mobileNumber, String email, boolean nidPhotos, boolean personalDetails, boolean address, boolean bankDetails, boolean nomineeDetails, boolean documents, boolean isActive);
+    CompletionSection accountCompletion(String mobileNumber, String email, boolean nidPhotos, boolean personalDetails, boolean address, boolean bankDetails, boolean nomineeDetails, boolean documents, boolean isActive, boolean boPayment);
     CompletionSection checkAccountCompletionDetails(ObjectId accountId);
 }

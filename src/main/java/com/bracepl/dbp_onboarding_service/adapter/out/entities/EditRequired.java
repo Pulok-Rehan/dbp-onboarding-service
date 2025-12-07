@@ -32,6 +32,7 @@ public class EditRequired {
     private DocumentsDto documentsDto;
     private String accountId;
     private String requestedBy;
+    private String remarks;
 
     public static EditRequired fromRequest(EditAccountRequest request) {
         EditRequired editRequired = new EditRequired();
@@ -46,6 +47,7 @@ public class EditRequired {
         editRequired.setDocumentsDto(request.getDocumentsDto());
         editRequired.setAccountId(request.getAccountId());
         editRequired.setRequestedBy(request.getRequestedBy());
+        editRequired.setRemarks(request.getRemarks());
         return editRequired;
     }
 }

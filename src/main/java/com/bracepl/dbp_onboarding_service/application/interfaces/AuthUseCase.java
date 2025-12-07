@@ -12,4 +12,5 @@ public interface AuthUseCase {
     ServiceResponse registerInternal(RegisterDtoInternal registerDtoInternal, String otp) throws JsonProcessingException;
     ServiceResponse forgotPassword(ForgotPasswordDto forgotPasswordDto, String otp) throws JsonProcessingException;
     ServiceResponse setNewPassword(NewPasswordDto newPasswordDto) throws Exception;
+    ServiceResponse validateToken(String token) throws Exception;
 }
