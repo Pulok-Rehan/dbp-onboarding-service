@@ -20,6 +20,8 @@ public class BankDetailsDto {
     private String preferedBranch;
     private String boType;
     private boolean boLinked;
+    private boolean enableDividendCredit;
+    private boolean applyForTaxExemption;
     private String boNumber;
     private String jointAccountName;
     private String jointAccountEmail;

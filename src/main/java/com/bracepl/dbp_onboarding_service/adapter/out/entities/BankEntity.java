@@ -20,4 +20,5 @@ public class BankEntity {
     private String bankName;
     private String branchName;
     private String routingNumber;
+    private String accountNo;
 }

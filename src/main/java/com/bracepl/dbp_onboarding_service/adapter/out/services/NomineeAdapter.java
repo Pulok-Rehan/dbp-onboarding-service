@@ -36,7 +36,7 @@ public class NomineeAdapter implements NomineeDomain {
     @Transactional
     public String addNominee(Nominee nominee, String mobileNumber) {
         try {
-            double totalPercentage = nominee.getNomineePercentage();
+            double totalPercentage = nominee.getPercentage();
             List<NomineeEntity> nomineeEntities = new ArrayList<>();
                 NomineeEntity nomineeEntity = this.populateToNomineeEntity(nominee);
                 log.info("SAVING NOMINEE...");
@@ -125,10 +125,10 @@ public class NomineeAdapter implements NomineeDomain {
     private NomineeEntity populateToNomineeEntity(Nominee nominee){
         return NomineeEntity.builder()
                 .id(nominee.getId())
-                .nid(nominee.getNomineeNidNumber())
+                .nid(nominee.getNid())
                 .name(nominee.getName())
                 .relation(nominee.getRelation())
-                .percentage(nominee.getNomineePercentage())
+                .percentage(nominee.getPercentage())
                 .city(nominee.getName())
                 .country(nominee.getName())
                 .state(nominee.getName())
@@ -141,10 +141,10 @@ public class NomineeAdapter implements NomineeDomain {
     private Nominee populateToNomineeModel(NomineeEntity nominee){
         return Nominee.builder()
                 .id(nominee.getId())
-                .nomineeNidNumber(nominee.getNid())
+                .nid(nominee.getNid())
                 .name(nominee.getName())
                 .relation(nominee.getRelation())
-                .nomineePercentage(nominee.getPercentage())
+                .percentage(nominee.getPercentage())
                 .city(nominee.getName())
                 .country(nominee.getName())
                 .state(nominee.getName())

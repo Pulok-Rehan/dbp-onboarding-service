@@ -1,28 +1,21 @@
 package com.bracepl.dbp_onboarding_service.adapter.out.services;
 
-import com.bracepl.dbp_onboarding_service.adapter.out.entities.BankEntity;
-import com.bracepl.dbp_onboarding_service.adapter.out.entities.CsdEntity;
-import com.bracepl.dbp_onboarding_service.adapter.out.entities.JointAccountEntity;
-import com.bracepl.dbp_onboarding_service.adapter.out.entities.ParitalAccountEntity;
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.*;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.CsdRepository;
+import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.NomineeRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.PartialAccountRepository;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.interfaces.PartialAccountDomain;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
+import com.bracepl.dbp_onboarding_service.domain.models.Nominee;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class PartialAccountAdapter implements PartialAccountDomain {
@@ -32,10 +25,14 @@ public class PartialAccountAdapter implements PartialAccountDomain {
     private String clientPortalBranch;
     private final PartialAccountRepository partialAccountRepository;
     private final CsdRepository csdRepository;
+    private final NomineeRepository nomineeRepository;
+    private final ObjectMapper objectMapper;
 
-    public PartialAccountAdapter(PartialAccountRepository partialAccountRepository, CsdRepository csdRepository) {
+    public PartialAccountAdapter(PartialAccountRepository partialAccountRepository, CsdRepository csdRepository, NomineeRepository nomineeRepository, ObjectMapper objectMapper) {
         this.partialAccountRepository = partialAccountRepository;
         this.csdRepository = csdRepository;
+        this.nomineeRepository = nomineeRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -115,6 +112,46 @@ public class PartialAccountAdapter implements PartialAccountDomain {
         }
     }
 
+    @Override
+    public Account saveWithNominees(Account account, List<Nominee> nominees) {
+        try {
+            List<NomineeEntity> savedNomineeEntities = new ArrayList<>();
+            if (nominees != null) {
+                for (Nominee nominee : nominees) {
+                    NomineeEntity nomineeEntity = NomineeEntity.builder()
+                            .name(nominee.getName())
+                            .nid(nominee.getNid())
+                            .percentage(nominee.getPercentage())
+                            .relation(nominee.getRelation())
+                            .city(nominee.getCity())
+                            .country(nominee.getCountry())
+                            .state(nominee.getState())
+                            .zipCode(nominee.getZipCode())
+                            .address(nominee.getAddress())
+                            .minor(nominee.isMinor())
+                            .nomineeDob(nominee.getNomineeDob())
+                            .mobileNumber(nominee.getMobileNumber())
+                            .nomineeNidFront(nominee.getNomineeNidFront())
+                            .nomineeNidBack(nominee.getNomineeNidBack())
+                            .guardianNidFront(nominee.getGuardianNidFront())
+                            .guardianNidBack(nominee.getGuardianNidBack())
+                            .guardianNidNumber(nominee.getGuardianNidNumber())
+                            .nomineePhoto(nominee.getNomineePhoto())
+                            .nomineeSignature(nominee.getNomineeSignature())
+                            .build();
+                    savedNomineeEntities.add(nomineeRepository.save(nomineeEntity));
+                }
+            }
+
+            ParitalAccountEntity accountEntity = this.populateToAccountEntityWithNominees(account, savedNomineeEntities);
+            ParitalAccountEntity savedAccountEntity = partialAccountRepository.save(accountEntity);
+            return addIdToAccountObject(account, savedAccountEntity.getId());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     private ParitalAccountEntity populateToAccountEntity(Account account, boolean isActive, String csdId){
         return ParitalAccountEntity.builder()
                 .id(account.getId())
@@ -127,11 +164,16 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .fathersName(account.getFathersName())
                 .mothersName(account.getMothersName())
                 .dateOfBirth(account.getDateOfBirth())
-                .addressLine1(account.getAddressLine1())
-                .city(account.getCity())
-                .country(account.getCountry())
-                .state(account.getState())
-                .zipCode(account.getZipCode())
+                .addressLine1PresentAddress(account.getAddressLine1PresentAddress())
+                .addressLine1PermanentAddress(account.getAddressLine1PermanentAddress())
+                .cityPresentAddress(account.getCityPresentAddress())
+                .cityPermanentAddress(account.getCityPermanentAddress())
+                .countryPresentAddress(account.getCountryPresentAddress())
+                .countryPermanentAddress(account.getCountryPermanentAddress())
+                .statePresentAddress(account.getStatePresentAddress())
+                .statePermanentAddress(account.getStatePermanentAddress())
+                .zipCodePresentAddress(account.getZipCodePresentAddress())
+                .zipCodePernmanentAddress(account.getZipCodePernmanentAddress())
                 .bank(BankEntity.builder()
                         .id(account.getId())
                         .bankName(account.getBankName())
@@ -139,20 +181,26 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                         .branchName(account.getBranchName())
                         .build())
                 .accountNo(account.getAccountNo())
+                .passportNumber(account.getPassportNumber())
                 .residency(account.getResidency())
                 .boType(account.getBoType())
                 .nidFront(account.getNidFront())
                 .nidBack(account.getNidBack())
                 .photo(account.getPhoto())
+                .tinCertificate(account.getTinCertificate())
                 .signature(account.getSignature())
                 .chequeLeaf(account.getChequeLeaf())
-                .photo(account.getPhoto())
                 .boLinked(account.isBoLinked())
                 .isActive(isActive)
                 .accountStatus(AccountStatus.INITIATED.name())
                 .csdId(csdId)
                 .rm(account.getRmId()== null ? clientPortalRm : account.getRmId())
                 .preferedBranch(account.getPreferedBranch()== null ? clientPortalBranch : account.getPreferedBranch())
+                .enableDividendCredit(account.isEnableDividendCredit())
+                .applyForTaxExemption(account.isApplyForTaxExemption())
+                .occupation(account.getOccupation())
+                .sourceOfFund(account.getSourceOfFund())
+                .nominees(account.getNominees() != null ? objectMapper.convertValue(account.getNominees(), new TypeReference<List<NomineeEntity>>() {}) : new  ArrayList<>())
                 .build();
     }
 
@@ -168,11 +216,11 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .fathersName(account.getFathersName())
                 .mothersName(account.getMothersName())
                 .dateOfBirth(account.getDateOfBirth())
-                .addressLine1(account.getAddressLine1())
-                .city(account.getCity())
-                .country(account.getCountry())
-                .state(account.getState())
-                .zipCode(account.getZipCode())
+                .addressLine1PresentAddress(account.getAddressLine1PresentAddress())
+                .cityPresentAddress(account.getCityPresentAddress())
+                .countryPresentAddress(account.getCountryPresentAddress())
+                .statePresentAddress(account.getStatePresentAddress())
+                .zipCodePresentAddress(account.getZipCodePresentAddress())
                 .bank(BankEntity.builder()
                         .id(account.getId())
                         .bankName(account.getBankName())
@@ -187,11 +235,11 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .photo(account.getPhoto())
                 .signature(account.getSignature())
                 .chequeLeaf(account.getChequeLeaf())
-                .photo(account.getPhoto())
                 .boLinked(account.isBoLinked())
                 .isActive(isActive)
                 .rm(account.getRmId()== null ? clientPortalRm : account.getRmId())
                 .preferedBranch(account.getPreferedBranch()== null ? clientPortalBranch : account.getPreferedBranch())
+                .nominees(account.getNominees() != null ? objectMapper.convertValue(account.getNominees(), new TypeReference<List<NomineeEntity>>() {}) : new  ArrayList<>())
                 .jointAccountEntity(JointAccountEntity.builder()
                         .name(account.getJointAccountname())
                         .email(account.getJointAccountEmail())
@@ -212,11 +260,11 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .fathersName(account.getFathersName())
                 .mothersName(account.getMothersName())
                 .dateOfBirth(account.getDateOfBirth())
-                .addressLine1(account.getAddressLine1())
-                .city(account.getCity())
-                .country(account.getCountry())
-                .state(account.getState())
-                .zipCode(account.getZipCode())
+                .addressLine1PresentAddress(account.getAddressLine1PresentAddress())
+                .cityPresentAddress(account.getCityPresentAddress())
+                .countryPresentAddress(account.getCountryPresentAddress())
+                .statePresentAddress(account.getStatePresentAddress())
+                .zipCodePresentAddress(account.getZipCodePresentAddress())
                 .bank(BankEntity.builder()
                         .id(account.getId())
                         .bankName(account.getBankName())
@@ -233,6 +281,7 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .chequeLeaf(account.getChequeLeaf())
                 .rm(account.getRmId()== null ? clientPortalRm : account.getRmId())
                 .preferedBranch(account.getPreferedBranch()== null ? clientPortalBranch : account.getPreferedBranch())
+                .nominees(account.getNominees() != null ? objectMapper.convertValue(account.getNominees(), new TypeReference<List<NomineeEntity>>() {}) : new  ArrayList<>())
                 .jointAccountEntity(JointAccountEntity.builder()
                         .name(account.getJointAccountname())
                         .address(account.getJointAccountAddress())
@@ -246,6 +295,58 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .build();
     }
 
+    private ParitalAccountEntity populateToAccountEntityWithNominees(Account account, List<NomineeEntity> savedNomineeEntities) {
+        return ParitalAccountEntity.builder()
+                .id(account.getId())
+                .investorCode(account.getInvestorCode())
+                .name(account.getName())
+                .emailAddress(account.getEmail())
+                .mobileNumber(account.getMobileNumber())
+                .gender(account.getGender())
+                .nid(account.getNid())
+                .fathersName(account.getFathersName())
+                .mothersName(account.getMothersName())
+                .dateOfBirth(account.getDateOfBirth())
+                .addressLine1PresentAddress(account.getAddressLine1PresentAddress())
+                .cityPresentAddress(account.getCityPresentAddress())
+                .countryPresentAddress(account.getCountryPresentAddress())
+                .statePresentAddress(account.getStatePresentAddress())
+                .zipCodePresentAddress(account.getZipCodePresentAddress())
+                .addressLine1PermanentAddress(account.getAddressLine1PermanentAddress())
+                .cityPermanentAddress(account.getCityPermanentAddress())
+                .countryPermanentAddress(account.getCountryPermanentAddress())
+                .statePermanentAddress(account.getStatePermanentAddress())
+                .zipCodePernmanentAddress(account.getZipCodePernmanentAddress())
+                .bank(BankEntity.builder()
+                        .id(account.getId())
+                        .bankName(account.getBankName())
+                        .routingNumber(account.getRoutingNumber())
+                        .branchName(account.getBranchName())
+                        .build())
+                .accountNo(account.getAccountNo())
+                .residency(account.getResidency())
+                .boType(account.getBoType())
+                .nidFront(account.getNidFront())
+                .nidBack(account.getNidBack())
+                .photo(account.getPhoto())
+                .signature(account.getSignature())
+                .chequeLeaf(account.getChequeLeaf())
+                .rm(account.getRmId()== null ? clientPortalRm : account.getRmId())
+                .preferedBranch(account.getPreferedBranch()== null ? clientPortalBranch : account.getPreferedBranch())
+                .jointAccountEntity(account.getJointAccountname() != null ? JointAccountEntity.builder()
+                        .name(account.getJointAccountname())
+                        .address(account.getJointAccountAddress())
+                        .email(account.getJointAccountEmail())
+                        .mobileNumbr(account.getJointAccountMobileNumbr())
+                        .jointAccountSignature(account.getJointAccountSignature())
+                        .jointAccountPhoto(account.getJointAccountPhoto())
+                        .jointAccountNidBack(account.getJointAccountNidBack())
+                        .jointAccountNidFront(account.getJointAccountNidFront())
+                        .build() : null)
+                .nominees(savedNomineeEntities)
+                .build();
+    }
+
     private Account populateToAccountModel(ParitalAccountEntity account){
         return Account.builder()
                 .id(account.getId())
@@ -253,17 +354,26 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .fathersName(account.getFathersName())
                 .mothersName(account.getMothersName())
                 .dateOfBirth(account.getDateOfBirth())
-                .addressLine1(account.getAddressLine1())
-                .city(account.getCity())
-                .country(account.getCountry())
-                .state(account.getState())
-                .zipCode(account.getZipCode())
+                .addressLine1PresentAddress(account.getAddressLine1PresentAddress())
+                .cityPresentAddress(account.getCityPresentAddress())
+                .countryPresentAddress(account.getCountryPresentAddress())
+                .statePresentAddress(account.getStatePresentAddress())
+                .zipCodePresentAddress(account.getZipCodePresentAddress())
+                .cityPermanentAddress(account.getCityPermanentAddress())
+                .addressLine1PermanentAddress(account.getAddressLine1PermanentAddress())
+                .statePermanentAddress(account.getStatePermanentAddress())
+                .zipCodePernmanentAddress(account.getZipCodePernmanentAddress())
+                .countryPermanentAddress(account.getCountryPermanentAddress())
                 .investorCode(account.getInvestorCode())
                 .email(account.getEmailAddress())
                 .mobileNumber(account.getMobileNumber())
                 .name(account.getName())
                 .gender(account.getGender())
                 .nidFront(account.getNidFront())
+                .photo(account.getPhoto())
+                .signature(account.getSignature())
+                .chequeLeaf(account.getChequeLeaf())
+                .tinCertificate(account.getTinCertificate())
                 .nidBack(account.getNidBack())
                 .bankName(account.getBank().getBankName())
                 .routingNumber(account.getBank().getRoutingNumber())
@@ -275,6 +385,7 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .transactionStatus(account.getTransactionStatus())
                 .rmId(account.getRm())
                 .preferedBranch(account.getPreferedBranch())
+                .nominees(objectMapper.convertValue(account.getNominees(), new TypeReference<List<Nominee>>(){}))
                 .build();
     }
 
@@ -285,11 +396,11 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .fathersName(account.getFathersName())
                 .mothersName(account.getMothersName())
                 .dateOfBirth(account.getDateOfBirth())
-                .addressLine1(account.getAddressLine1())
-                .city(account.getCity())
-                .country(account.getCountry())
-                .state(account.getState())
-                .zipCode(account.getZipCode())
+                .addressLine1PresentAddress(account.getAddressLine1PresentAddress())
+                .cityPresentAddress(account.getCityPresentAddress())
+                .countryPresentAddress(account.getCountryPresentAddress())
+                .statePresentAddress(account.getStatePresentAddress())
+                .zipCodePresentAddress(account.getZipCodePresentAddress())
                 .investorCode(account.getInvestorCode())
                 .email(account.getEmailAddress())
                 .mobileNumber(account.getMobileNumber())
@@ -297,6 +408,10 @@ public class PartialAccountAdapter implements PartialAccountDomain {
                 .gender(account.getGender())
                 .nidFront(account.getNidFront())
                 .nidBack(account.getNidBack())
+                .photo(account.getPhoto())
+                .chequeLeaf(account.getChequeLeaf())
+                .signature(account.getSignature())
+                .tinCertificate(account.getTinCertificate())
                 .bankName(account.getBank() != null ? account.getBank().getBankName() : null)
                 .routingNumber(account.getBank() != null ? account.getBank().getRoutingNumber() : null)
                 .branchName(account.getBank() != null ? account.getBank().getBranchName() : null)
@@ -351,25 +466,25 @@ public class PartialAccountAdapter implements PartialAccountDomain {
         // ✅ Address Section
         if (request.isAddressSection() && request.getAddressDto() != null) {
             var address = request.getAddressDto();
-            if (address.getAddressLine1() != null) account.setAddressLine1(address.getAddressLine1());
-            if (address.getCity() != null) account.setCity(address.getCity());
-            if (address.getCountry() != null) account.setCountry(address.getCountry());
-            if (address.getState() != null) account.setState(address.getState());
-            if (address.getZipCode() != null) account.setZipCode(address.getZipCode());
+            if (address.getAddressLine1() != null) account.setAddressLine1PresentAddress(address.getAddressLine1());
+            if (address.getCity() != null) account.setCityPresentAddress(address.getCity());
+            if (address.getCountry() != null) account.setCountryPresentAddress(address.getCountry());
+            if (address.getState() != null) account.setStatePresentAddress(address.getState());
+            if (address.getZipCode() != null) account.setZipCodePresentAddress(address.getZipCode());
         }
 
         // ✅ Documents Section
         if (request.isDocumentsSection() && request.getDocumentsDto() != null) {
             var docs = request.getDocumentsDto();
 
-            if (docs.getPhoto() != null) account.setPhoto(docs.getPhoto().getBytes().toString());
-            if (docs.getSignature() != null) account.setSignature(docs.getSignature().getBytes().toString());
-            if (docs.getChequeLeaf() != null) account.setChequeLeaf(docs.getChequeLeaf().getBytes().toString());
+            if (docs.getPhoto() != null) account.setPhoto(Base64.getEncoder().encodeToString(docs.getPhoto().getBytes()));
+            if (docs.getSignature() != null) account.setSignature( Base64.getEncoder().encodeToString(docs.getSignature().getBytes()));
+            if (docs.getChequeLeaf() != null) account.setChequeLeaf(Base64.getEncoder().encodeToString(docs.getChequeLeaf().getBytes()));
         }
 
         // ✅ Photo Section (if you want to update standalone photo)
         if (request.isPhotoSection() && request.getDocumentsDto() != null && request.getDocumentsDto().getPhoto() != null) {
-            account.setPhoto(request.getDocumentsDto().getPhoto().getBytes().toString());
+            account.setPhoto(Base64.getEncoder().encodeToString(request.getDocumentsDto().getPhoto().getBytes()));
         }
     }
 

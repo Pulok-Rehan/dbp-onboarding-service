@@ -2,6 +2,7 @@ package com.bracepl.dbp_onboarding_service.application.interfaces;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
+import com.bracepl.dbp_onboarding_service.adapter.out.models.GenericServiceRequestDto;
 import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -16,4 +17,5 @@ public interface SettlementUseCase {
     ServiceResponse requsetForChange();
     ServiceResponse searchAccount(AccountSearchRequest accountSearchRequest) throws JsonProcessingException;
     ServiceResponse requireEdit(ChangeRequestDto changeRequestDto) throws JsonProcessingException;
+    ServiceResponse approveChange(GenericServiceRequestDto changeRequestDto) throws JsonProcessingException;
 }

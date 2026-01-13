@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -22,6 +23,7 @@ public class NomineeEntity {
     private String name;
     private String relation;
     private String nid;
+    private String nomineeDob;
     private LocalDate dateOfBirth;
     private double percentage;
     private String city;
@@ -30,4 +32,14 @@ public class NomineeEntity {
     private String zipCode;
     private String address;
     private String mobileNumber;
+    private String nomineeNidFront;
+    private String nomineeNidBack;
+    private String nomineePhoto;
+    private String nomineeSignature;
+    private boolean minor;
+    private String guardianName;
+    private String relationshipWithNominee;
+    private String guardianNidNumber;
+    private String guardianNidFront;
+    private String guardianNidBack;
 }

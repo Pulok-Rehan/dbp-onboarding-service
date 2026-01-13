@@ -9,7 +9,6 @@ import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.CsdDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
 import com.bracepl.dbp_onboarding_service.domain.models.ClientRemarkModel;
-import com.bracepl.dbp_onboarding_service.domain.models.PartialAccount;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -126,11 +125,11 @@ public class CsdAdapter implements CsdDomain {
                     .fathersName(accountEntity.getFathersName())
                     .mothersName(accountEntity.getMothersName())
                     .dateOfBirth(accountEntity.getDateOfBirth())
-                    .addressLine1(accountEntity.getAddressLine1())
-                    .city(accountEntity.getCity())
-                    .country(accountEntity.getCountry())
-                    .state(accountEntity.getState())
-                    .zipCode(accountEntity.getZipCode())
+                    .addressLine1PresentAddress(accountEntity.getAddressLine1())
+                    .cityPresentAddress(accountEntity.getCity())
+                    .countryPresentAddress(accountEntity.getCountry())
+                    .statePresentAddress(accountEntity.getState())
+                    .zipCodePresentAddress(accountEntity.getZipCode())
                     .bankName(accountEntity.getBank().getBankName())
                     .routingNumber(accountEntity.getBank().getRoutingNumber())
                     .branchName(accountEntity.getBank().getBranchName())
@@ -170,11 +169,11 @@ public class CsdAdapter implements CsdDomain {
                     .fathersName(accountEntity.getFathersName())
                     .mothersName(accountEntity.getMothersName())
                     .dateOfBirth(accountEntity.getDateOfBirth())
-                    .addressLine1(accountEntity.getAddressLine1())
-                    .city(accountEntity.getCity())
-                    .country(accountEntity.getCountry())
-                    .state(accountEntity.getState())
-                    .zipCode(accountEntity.getZipCode())
+                    .addressLine1PresentAddress(accountEntity.getAddressLine1PresentAddress())
+                    .cityPresentAddress(accountEntity.getCityPresentAddress())
+                    .countryPresentAddress(accountEntity.getCountryPresentAddress())
+                    .statePresentAddress(accountEntity.getStatePresentAddress())
+                    .zipCodePresentAddress(accountEntity.getZipCodePresentAddress())
                     .bankName(accountEntity.getBank().getBankName())
                     .routingNumber(accountEntity.getBank().getRoutingNumber())
                     .branchName(accountEntity.getBank().getBranchName())

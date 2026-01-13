@@ -21,11 +21,12 @@ public class CompletionSectionEntity {
     private String email;
 
     private boolean personalDetails;
-    private boolean address;
-    private boolean nidPhotos;
+//    private boolean address;
+    private boolean liveValidationPhotos;
     private boolean bankDetails;
     private boolean nomineeDetails;
     private boolean documents;
     private boolean boPayment;
+    private boolean ekyc;
     private boolean isActive;
 }

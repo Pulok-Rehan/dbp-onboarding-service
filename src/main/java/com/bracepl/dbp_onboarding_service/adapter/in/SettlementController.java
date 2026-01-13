@@ -2,6 +2,7 @@ package com.bracepl.dbp_onboarding_service.adapter.in;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
+import com.bracepl.dbp_onboarding_service.adapter.out.models.GenericServiceRequestDto;
 import com.bracepl.dbp_onboarding_service.application.dtos.IdDto;
 import com.bracepl.dbp_onboarding_service.application.interfaces.SettlementUseCase;
 import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
@@ -53,5 +54,10 @@ public class SettlementController {
     @PostMapping(path = "/require-edit")
     public ServiceResponse requireEdit(@RequestBody ChangeRequestDto changeRequestDto) throws JsonProcessingException {
         return settlementUseCase.requireEdit(changeRequestDto);
+    }
+
+    @PostMapping(path = "/approve-change-request")
+    public ServiceResponse requireEdit(@RequestBody GenericServiceRequestDto genericServiceRequestDto) throws JsonProcessingException {
+        return settlementUseCase.approveChange(genericServiceRequestDto);
     }
 }

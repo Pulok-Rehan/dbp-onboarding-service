@@ -18,10 +18,15 @@ public class SequenceGeneratorService {
     public String generateInvestorCode(String sequenceName) {
         Query query = new Query(Criteria.where("_id").is(sequenceName));
         Update update = new Update().inc("seq", 1);
-        FindAndModifyOptions options = FindAndModifyOptions.options().returnNew(true).upsert(true);
+        FindAndModifyOptions options = FindAndModifyOptions.options()
+                .returnNew(true)
+                .upsert(true);
 
-        DatabaseSequence counter = mongoOperations.findAndModify(query, update, options, DatabaseSequence.class);
+        DatabaseSequence counter = mongoOperations.findAndModify(
+                query, update, options, DatabaseSequence.class);
+
         long nextSeq = (counter != null) ? counter.getSeq() : 1;
-        return String.format("DBP%06d", nextSeq); // e.g., DBP0001
+
+        return "CP" + nextSeq;
     }
 }

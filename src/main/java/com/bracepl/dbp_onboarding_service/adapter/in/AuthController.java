@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/onboarding/api")
+@RequestMapping("/onboarding")
 public class AuthController {
 
     private final AuthUseCase authUseCase;
@@ -32,6 +32,7 @@ public class AuthController {
     @PostMapping(value = "/public/new-password")
     public ServiceResponse setNewPassword(@RequestBody NewPasswordDto newPasswordDto) throws Exception {
         return authUseCase.setNewPassword(newPasswordDto);
+
     }
 
     @PostMapping(value = "/public/validate-token")

@@ -30,6 +30,7 @@ public class AccountEntity {
     private String name;
     private String gender;
     private String nid;
+    private boolean nidVerified;
     private String fathersName;
     private String mothersName;
     private String dateOfBirth;
@@ -48,6 +49,7 @@ public class AccountEntity {
     private String photo;
     private String signature;
     private String chequeLeaf;
+    private String tinCertificate;
     private JointAccountEntity jointAccountEntity;
     @DBRef
     private List<NomineeEntity> nominees;

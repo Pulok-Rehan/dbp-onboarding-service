@@ -4,7 +4,6 @@ import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.EkycService;
 import com.bracepl.dbp_onboarding_service.application.dtos.NomineeDto;
 import com.bracepl.dbp_onboarding_service.application.interfaces.NomineeUseCase;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.NomineeDomain;
-import com.bracepl.dbp_onboarding_service.domain.models.Ekyc;
 import com.bracepl.dbp_onboarding_service.domain.models.Nominee;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 @Service
@@ -37,19 +37,19 @@ public class NomineeService implements NomineeUseCase {
 //            Ekyc ekyc = ekycService.callEkyc(nomineeNidFront, nomineeNidBack, mobilenumber);
 //            log.info("EKYC SERVICE RESPONSE: {}", ekyc);
             Nominee nominee = Nominee.builder()
-                    .nomineeNidFront(nomineeNidFront.getBytes())
-                    .nomineeNidBack(nomineeNidBack.getBytes())
-                    .nomineeNidNumber(nomineeDto.getNomineeNid())
+                    .nomineeNidFront(Base64.getEncoder().encodeToString(nomineeNidFront.getBytes()))
+                    .nomineeNidBack(Base64.getEncoder().encodeToString(nomineeNidBack.getBytes()))
+                    .nid(nomineeDto.getNomineeNidNumber())
 //                    .nomineeDob(nomineeDto.getNomineeDob())
                     .relation(nomineeDto.getRelation())
-                    .nomineePercentage(nomineeDto.getNomineePercentage() == 0 ? 100 : nomineeDto.getNomineePercentage())
+                    .percentage(nomineeDto.getNomineePercentage() == 0 ? 100 : nomineeDto.getNomineePercentage())
                     .name(nomineeDto.getName())
                     .city(nomineeDto.getName())
                     .country(nomineeDto.getName())
                     .state(nomineeDto.getName())
                     .zipCode(nomineeDto.getName())
                     .country(nomineeDto.getName())
-                    .mobileNumber(nomineeDto.getNomineeMobileNumber())
+                    .mobileNumber(nomineeDto.getMobileNumber())
                     .build();
             log.info("ADDING NOMINEE...");
         String nomineeSaved = nomineeDomain.addNominee(nominee, mobilenumber);

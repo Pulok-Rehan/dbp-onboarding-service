@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @Builder
 public class AddressDto {
-    private String mobileNumber;
+//    private String mobileNumber;
     private String addressLine1;
     private String city;
     private String country;

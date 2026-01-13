@@ -1,10 +1,10 @@
 package com.bracepl.dbp_onboarding_service.adapter.in;
 
+import com.bracepl.dbp_onboarding_service.adapter.out.entities.AccountEntity;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
 import com.bracepl.dbp_onboarding_service.application.dtos.*;
 import com.bracepl.dbp_onboarding_service.application.interfaces.AccountOpenUseCase;
-import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
-import com.bracepl.dbp_onboarding_service.domain.models.PartialAccount;
+import com.bracepl.dbp_onboarding_service.domain.models.Account;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.io.IOException;
-import java.security.Provider;
 
 @RestController
 @RequestMapping("/onboarding/api")
@@ -42,13 +42,15 @@ public class AccountOpeningController {
         return openAccountUseCase.accountOpen(partialAccountId);
     }
 
-    @PostMapping(value = "/account-open-ekyc", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/account-open-photo-validation", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ServiceResponse openAccountWithEkyc(@ModelAttribute RegisterDto registerDto,
-                                               @RequestParam MultipartFile nidFront,
                                                @RequestParam MultipartFile photo,
-                                               @RequestParam MultipartFile nidBack) throws IOException {
+                                               @RequestParam MultipartFile photoTiltingLeft,
+                                               @RequestParam MultipartFile photoTiltingRight,
+                                               @RequestParam MultipartFile photoSmiling,
+                                               @RequestParam MultipartFile photoBlinking) throws IOException {
         log.info("ENTERED INTO THE CONTROLLER FOR OPENING ACCOUNT EKYC...");
-        return openAccountUseCase.openAccountWithEkyc(nidFront, nidBack, photo, registerDto);
+        return openAccountUseCase.openAccountWithEkyc(photo, photoTiltingLeft,photoTiltingRight,photoSmiling, photoBlinking, registerDto);
     }
 
     @PostMapping(value = "/account-open-personal-details")
@@ -79,6 +81,9 @@ public class AccountOpeningController {
     public ServiceResponse openAccountWithDocuments(@ModelAttribute RegisterDto registerDto,
                                                     @RequestParam MultipartFile signature,
                                                     @RequestParam MultipartFile chequeLeaf,
+                                                    @RequestParam MultipartFile nidFront,
+                                                    @RequestParam MultipartFile nidBack,
+//                                                    @RequestParam MultipartFile tinCertificate,
                                                     @RequestParam(required = false) MultipartFile boAttachment,
                                                     @RequestParam(required = false) MultipartFile jointAccountPhoto,
                                                     @RequestParam(required = false) MultipartFile jointAccountSignature,
@@ -87,7 +92,13 @@ public class AccountOpeningController {
                                                     )
             throws IOException {
         log.info("ENTERED INTO THE CONTROLLER FOR OPENING ACCOUNT DOCUMENTS...");
-        return openAccountUseCase.openAccountWithDocuments(registerDto, signature, chequeLeaf, boAttachment, jointAccountPhoto, jointAccountSignature, jointAccountNidFront, jointAccountNidBack);
+        return openAccountUseCase.openAccountWithDocuments(registerDto, nidFront, nidBack, nidBack, signature, chequeLeaf, boAttachment, jointAccountPhoto, jointAccountSignature, jointAccountNidFront, jointAccountNidBack);
+    }
+
+    @PostMapping(value = "/account-open-nominees", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ServiceResponse openAccountWithNominees(@ModelAttribute NomineeListDto nomineeListDto) throws IOException {
+        log.info("ENTERED INTO THE CONTROLLER FOR OPENING ACCOUNT NOMINEES...");
+        return openAccountUseCase.openAccountWithNomineeDetails(nomineeListDto);
     }
 
     @PostMapping(path = "/edit")
@@ -95,9 +106,14 @@ public class AccountOpeningController {
         return openAccountUseCase.editAccount(changeRequestDto);
     }
 
-    @GetMapping(path = "/search")
-    public ServiceResponse searchAccount(@RequestParam String input) throws JsonProcessingException {
+    @GetMapping(path = "/search-information")
+    public ServiceResponse searchAccountInfo(@RequestParam String input) throws JsonProcessingException {
         return openAccountUseCase.searchAccount(input);
+    }
+
+    @GetMapping(path = "/search")
+    public AccountEntity searchAccount(@RequestParam String input) throws JsonProcessingException {
+        return openAccountUseCase.getAccountSnapshot(input);
     }
 
     @GetMapping (path = "/getCompletionData")
@@ -113,6 +129,11 @@ public class AccountOpeningController {
     @GetMapping(path = "/getEditRequest")
     public ServiceResponse getEditRequest(@RequestParam String mobileNumber) throws JsonProcessingException {
         return openAccountUseCase.searchAccount(mobileNumber);
+    }
+
+    @GetMapping(path = "/test")
+    public String test() throws JsonProcessingException {
+        return "CALLED...";
     }
 
 }

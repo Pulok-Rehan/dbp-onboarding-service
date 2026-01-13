@@ -11,12 +11,10 @@ public class NidVerification {
     private String id;
     private String channel;
     private String nidNumber;
-//    private String dateOfBirth;
     private String faceSimilarity;
     private String message;
     private boolean success;
     private String nidFront;
-    private String nidBack;
     private String photo;
     private String boId;
     private String investorCode;

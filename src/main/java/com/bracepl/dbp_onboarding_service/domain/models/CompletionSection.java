@@ -14,10 +14,11 @@ import java.util.List;
 @Builder
 public class CompletionSection {
     private String mobileNumber;
+    private String emailAddress;
 //    private ObjectId accountId;
     private boolean personalDetails;
     private boolean address;
-    private boolean nidPhotos;
+    private boolean liveVerificationPhotos;
     private boolean documents;
     private boolean bankDetails;
     private boolean nomineeDetails;

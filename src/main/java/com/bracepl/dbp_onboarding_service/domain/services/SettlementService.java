@@ -2,8 +2,10 @@ package com.bracepl.dbp_onboarding_service.domain.services;
 
 import com.bracepl.dbp_onboarding_service.adapter.out.models.AccountSearchRequest;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.EditAccountRequest;
+import com.bracepl.dbp_onboarding_service.adapter.out.models.GenericServiceRequestDto;
 import com.bracepl.dbp_onboarding_service.application.interfaces.SettlementUseCase;
 import com.bracepl.dbp_onboarding_service.changeRequest.dto.ChangeRequestDto;
+import com.bracepl.dbp_onboarding_service.domain.interfaces.AccountDomain;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.SettlementDomain;
 import com.bracepl.dbp_onboarding_service.domain.models.Account;
 import com.bracepl.dbp_onboarding_service.domain.models.ServiceResponse;
@@ -20,10 +22,12 @@ import java.util.Objects;
 @Slf4j
 public class SettlementService implements SettlementUseCase {
     private final SettlementDomain settlementDomain;
+    private final AccountDomain accountDomain;
     private final ObjectMapper objectMapper;
 
-    public SettlementService(SettlementDomain settlementDomain, ObjectMapper objectMapper) {
+    public SettlementService(SettlementDomain settlementDomain, AccountDomain accountDomain, ObjectMapper objectMapper) {
         this.settlementDomain = settlementDomain;
+        this.accountDomain = accountDomain;
         this.objectMapper = objectMapper;
     }
 
@@ -93,5 +97,11 @@ public class SettlementService implements SettlementUseCase {
             return new ServiceResponse("Could not get account opening request");
         }
         return new ServiceResponse("Account opening request retrived", account);
+    }
+
+    @Override
+    public ServiceResponse approveChange(GenericServiceRequestDto changeRequestDto) throws JsonProcessingException {
+        String response =  accountDomain.updateAccount(changeRequestDto.getMobileNumber(), changeRequestDto.getFieldValues());
+        return new ServiceResponse("Account updated successfully", response);
     }
 }

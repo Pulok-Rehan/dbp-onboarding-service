@@ -147,20 +147,34 @@ public class AuthAdapter implements AuthDomain {
             MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
             form.add("grant_type", "password");
             form.add("client_id", keycloakClientId);
+            form.add("client_secret", keycloakClientSecret);
             form.add("username", adminUserName);
             form.add("password", adminPassword);
 
+            String fullUrl = keycloakUrl + keycloakTokenUrl;
+
+            // Add logging to debug
+            log.info("Keycloak Token URL: {}", fullUrl);
+            log.info("Client ID: {}", keycloakClientId);
+            log.info("Username: {}", adminUserName);
+            log.info("Client Secret present: {}", keycloakClientSecret != null && !keycloakClientSecret.isEmpty());
+
             HttpEntity<MultiValueMap<String, String>> entity = new HttpEntity<>(form, headers);
+
             ResponseEntity<String> response = restTemplate.postForEntity(
-                    keycloakUrl + "/realms/master/protocol/openid-connect/token",
+                    fullUrl,
                     entity,
                     String.class
             );
 
             JsonNode jsonNode = objectMapper.readTree(response.getBody());
             return jsonNode.get("access_token").asText();
+        } catch (HttpClientErrorException e) {
+            log.error("Keycloak authentication failed: Status={}, Body={}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            throw e;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error getting admin token from Keycloak", e);
             return "";
         }
     }

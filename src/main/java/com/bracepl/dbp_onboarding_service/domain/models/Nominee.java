@@ -12,8 +12,9 @@ import lombok.NoArgsConstructor;
 public class Nominee {
     private String id;
     private String name;
-    private String nomineeNidNumber;
-    private double nomineePercentage;
+    private String nid;
+    private String nomineeDob;
+    private double percentage;
     private String relation;
     private String city;
     private String country;
@@ -21,6 +22,14 @@ public class Nominee {
     private String zipCode;
     private String address;
     private String mobileNumber;
-    private byte[] nomineeNidFront;
-    private byte[] nomineeNidBack;
+    private String nomineeNidFront;
+    private String nomineeNidBack;
+    private String nomineePhoto;
+    private String nomineeSignature;
+    private boolean minor;
+    private String guardianName;
+    private String relationshipWithNominee;
+    private String guardianNidNumber;
+    private String guardianNidFront;
+    private String guardianNidBack;
 }

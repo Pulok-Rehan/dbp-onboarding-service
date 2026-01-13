@@ -13,8 +13,6 @@ public class NidVerificationResponse {
     private boolean success;
     private String message;
     private String fullName;
-//    private String DOB;
-//    private String NID;
     private String faceSimilarity;
     private int count;
 }

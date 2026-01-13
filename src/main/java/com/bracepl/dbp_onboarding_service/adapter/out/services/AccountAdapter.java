@@ -3,16 +3,15 @@ package com.bracepl.dbp_onboarding_service.adapter.out.services;
 import com.bracepl.dbp_onboarding_service.adapter.out.entities.*;
 import com.bracepl.dbp_onboarding_service.adapter.out.interfaces.*;
 import com.bracepl.dbp_onboarding_service.adapter.out.models.NidVerificationResponse;
+import com.bracepl.dbp_onboarding_service.application.dtos.CreateInvestorRequest;
 import com.bracepl.dbp_onboarding_service.changeRequest.ChangeRequestEntity;
 import com.bracepl.dbp_onboarding_service.changeRequest.repo.ChangeRequestRepository;
 import com.bracepl.dbp_onboarding_service.domain.enums.AccountStatus;
 import com.bracepl.dbp_onboarding_service.domain.interfaces.AccountDomain;
-import com.bracepl.dbp_onboarding_service.domain.models.Account;
-import com.bracepl.dbp_onboarding_service.domain.models.CompletionSection;
-import com.bracepl.dbp_onboarding_service.domain.models.Ekyc;
-import com.bracepl.dbp_onboarding_service.domain.models.JointAccoint;
+import com.bracepl.dbp_onboarding_service.domain.models.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.DirectFieldAccessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -23,10 +22,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.*;
 
@@ -50,6 +45,9 @@ public class AccountAdapter implements AccountDomain {
     @Value("${nidVerification.dir}")
     private String uploadDir;
 
+    @Value("${sp.service.baseUrl}")
+    private String spServiceBaseUrl;
+
     private final AccountRepository accountRepository;
     private final EkycService ekycService;
     private final RestTemplate restTemplate;
@@ -59,8 +57,9 @@ public class AccountAdapter implements AccountDomain {
     private final CsdRepository csdRepository;
     private final AccountCompletionRepository accountCompletionRepository;
     private final ChangeRequestRepository changeRequestRepository;
+    private final PartialAccountRepository partialAccountRepository;
 
-    public AccountAdapter(AccountRepository accountRepository, EkycService ekycService, RestTemplate restTemplate, ObjectMapper objectMapper, NidVerificationRepository nidVerificationRepository, SequenceGeneratorService sequenceGeneratorService, CsdRepository csdRepository, AccountCompletionRepository accountCompletionRepository, ChangeRequestRepository changeRequestRepository) {
+    public AccountAdapter(AccountRepository accountRepository, EkycService ekycService, RestTemplate restTemplate, ObjectMapper objectMapper, NidVerificationRepository nidVerificationRepository, SequenceGeneratorService sequenceGeneratorService, CsdRepository csdRepository, AccountCompletionRepository accountCompletionRepository, ChangeRequestRepository changeRequestRepository, PartialAccountRepository partialAccountRepository) {
         this.accountRepository = accountRepository;
         this.ekycService = ekycService;
         this.restTemplate = restTemplate;
@@ -70,6 +69,7 @@ public class AccountAdapter implements AccountDomain {
         this.csdRepository = csdRepository;
         this.accountCompletionRepository = accountCompletionRepository;
         this.changeRequestRepository = changeRequestRepository;
+        this.partialAccountRepository = partialAccountRepository;
     }
 
     @Override
@@ -257,6 +257,15 @@ public class AccountAdapter implements AccountDomain {
     }
 
     @Override
+    public AccountEntity searchByMobile(String input) {
+        Optional<AccountEntity> optionalAccountEntity = accountRepository.findByMobileNumber(input);
+        if (optionalAccountEntity.isEmpty()){
+            return new AccountEntity();
+        }
+        return optionalAccountEntity.get();
+    }
+
+    @Override
     public Ekyc callEkycService(MultipartFile nidFront, MultipartFile nidBack, MultipartFile photo, String mobileNumber) throws IOException {
         return ekycService.callEkyc(nidFront, nidBack, mobileNumber);
     }
@@ -267,16 +276,16 @@ public class AccountAdapter implements AccountDomain {
                         .nidNumber(nidNumber)
                         .investorCode(investorCode)
                         .boId(boId)
-                        .nidFront(this.convertToString(nidFront))
-                        .nidBack(this.convertToString(nidBack))
-                        .photo(this.convertToString(photo))
+                        .nidFront(Arrays.toString(nidFront.getBytes()))
+//                        .nidBack(nidBack.getBytes())
+                        .photo(Arrays.toString(photo.getBytes()))
                 .build());
     }
 
     @Override
-    public NidVerificationResponse callNidVerification(String nidNumber, String dateOfBirth, MultipartFile photo, MultipartFile nidPhoto, String channel) {
+    public NidVerificationResponse callNidVerification(String nidNumber, String dateOfBirth, String photo, String nidPhoto, String channel) {
         log.info("ENTERED FOR CALLING RVL API...");
-        String apiUrl = nidBaseUrl+verification;
+        String apiUrl = nidBaseUrl + verification;
         String apiKey = xApiKey;
 
         List<NidVerificationResponse> nidVerificationResponses = nidVerificationRepository.findAllByNidNumber(nidNumber);
@@ -290,7 +299,7 @@ public class AccountAdapter implements AccountDomain {
 
 
         try {
-            String imageBase64 = Base64.getEncoder().encodeToString(photo.getBytes());
+//            String imageBase64 = Base64.getEncoder().encodeToString(photo.getBytes());
 
 
             String requestBody = String.format("""
@@ -299,7 +308,7 @@ public class AccountAdapter implements AccountDomain {
                         "dateOfBirth": "%s",
                         "imageData": "%s"
                     }
-                    """, nidNumber, dateOfBirth, imageBase64);
+                    """, nidNumber, dateOfBirth, photo);
 
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -326,21 +335,23 @@ public class AccountAdapter implements AccountDomain {
                     .channel(channel)
                     .nidNumber(nidNumber)
                     .message(nidResponse.getMessage() == null ? "Could not call API" : nidResponse.getMessage())
-                    .photo(this.convertToString(photo))
-                    .nidFront(this.convertToString(nidPhoto))
+                    .photo(photo)
+                    .nidFront(nidPhoto)
                     .success(nidResponse.isSuccess()).build());
             return nidResponse;
 
         } catch (Exception e) {
             e.printStackTrace();
-//            nidVerificationRepository.save(NidVerification.builder()
-//                    .nidNumber(nidNumber)
+            nidVerificationRepository.save(NidVerification.builder()
+                    .nidNumber(nidNumber)
 //                    .dateOfBirth(e.getMessage())
-//                    .faceSimilarity(e.getMessage())
-//                    .channel(channel)
-//                    .message(e.getMessage())
-//                    .success(false)
-//                    .build());
+                    .faceSimilarity(e.getMessage())
+                    .channel(channel)
+                    .message(e.getMessage())
+                    .nidFront(nidPhoto)
+                    .photo(photo)
+                    .success(false)
+                    .build());
             return null;
         }
     }
@@ -371,9 +382,44 @@ public class AccountAdapter implements AccountDomain {
         return changeRequest;
     }
 
+    // Inside the consumer/listener in dbp_onboarding_service
+    public String updateAccount(String mobileNumber, Map<String, Object> updates) {
+        AccountEntity account = accountRepository.findByMobileNumber(mobileNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+        try {
+            objectMapper.updateValue(account, updates);
+            accountRepository.save(account);
+            return "Account updated successfully";
+        } catch (Exception e) {
+            log.error("Failed to update account: {}", e.getMessage());
+            throw new RuntimeException("Update failed", e);
+        }
+    }
+
+    @Override
+    public boolean callSpServiceToOpenAccount(CreateInvestorRequest createInvestorRequest) {
+        try {
+            String url = spServiceBaseUrl + "/open-account";
+            log.info("CALLING SP SERVICE TO OPEN ACCOUNT: {}", url);
+
+            org.springframework.http.HttpEntity<CreateInvestorRequest> request =
+                    new org.springframework.http.HttpEntity<>(createInvestorRequest);
+
+            org.springframework.http.ResponseEntity<String> response = restTemplate.postForEntity(
+                    url, request, String.class);
+
+            log.info("SP SERVICE RESPONSE: {}", response.getBody());
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            log.error("FAILED TO CALL SP SERVICE: {}", e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private AccountEntity populateToAccountEntity(Account account, String csdId){
         return AccountEntity.builder()
-//                .id(account.getId())
+                .id(account.getId())
                 .investorCode(account.getInvestorCode())
                 .name(account.getName())
                 .emailAddress(account.getEmail())
@@ -383,11 +429,11 @@ public class AccountAdapter implements AccountDomain {
                 .fathersName(account.getFathersName())
                 .mothersName(account.getMothersName())
                 .dateOfBirth(account.getDateOfBirth())
-                .addressLine1(account.getAddressLine1())
-                .city(account.getCity())
-                .country(account.getCountry())
-                .state(account.getState())
-                .zipCode(account.getZipCode())
+                .addressLine1(account.getAddressLine1PresentAddress())
+                .city(account.getCityPresentAddress())
+                .country(account.getCountryPresentAddress())
+                .state(account.getStatePresentAddress())
+                .zipCode(account.getZipCodePresentAddress())
                 .bank(BankEntity.builder()
                         .bankName(account.getBankName())
                         .routingNumber(account.getRoutingNumber())
@@ -401,6 +447,7 @@ public class AccountAdapter implements AccountDomain {
                 .photo(account.getPhoto())
                 .signature(account.getSignature())
                 .chequeLeaf(account.getChequeLeaf())
+                .tinCertificate(account.getTinCertificate())
                 .csdId(csdId)
                 .accountStatus(AccountStatus.REQUESTED)
                 .build();
@@ -418,11 +465,11 @@ public class AccountAdapter implements AccountDomain {
                 .fathersName(account.getFathersName())
                 .mothersName(account.getMothersName())
                 .dateOfBirth(account.getDateOfBirth())
-                .addressLine1(account.getAddressLine1())
-                .city(account.getCity())
-                .country(account.getCountry())
-                .state(account.getState())
-                .zipCode(account.getZipCode())
+                .addressLine1(account.getAddressLine1PresentAddress())
+                .city(account.getCityPresentAddress())
+                .country(account.getCountryPresentAddress())
+                .state(account.getStatePresentAddress())
+                .zipCode(account.getZipCodePresentAddress())
                 .bank(BankEntity.builder()
                         .bankName(account.getBankName())
                         .routingNumber(account.getRoutingNumber())
@@ -452,11 +499,11 @@ public class AccountAdapter implements AccountDomain {
                 .fathersName(account.getFathersName())
                 .mothersName(account.getMothersName())
                 .dateOfBirth(account.getDateOfBirth())
-                .addressLine1(account.getAddressLine1())
-                .city(account.getCity())
-                .country(account.getCountry())
-                .state(account.getState())
-                .zipCode(account.getZipCode())
+                .addressLine1(account.getAddressLine1PresentAddress())
+                .city(account.getCityPresentAddress())
+                .country(account.getCountryPresentAddress())
+                .state(account.getStatePresentAddress())
+                .zipCode(account.getZipCodePresentAddress())
                 .bank(BankEntity.builder()
                         .bankName(account.getBankName())
                         .routingNumber(account.getRoutingNumber())
@@ -538,26 +585,21 @@ public class AccountAdapter implements AccountDomain {
                 .build();
     }
 
-    private String convertToString(MultipartFile file) throws IOException {
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        Path dirPath = Paths.get(uploadDir);
-        Files.createDirectories(dirPath); // ensure the directory exists
-
-        Path filePath = dirPath.resolve(fileName); // safely appends the filename
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        return filePath.toString();
-    }
-
     private CompletionSection populateToCompletionSection(CompletionSectionEntity completionSection){
+        Optional<ParitalAccountEntity> partialAccount = partialAccountRepository.findByMobileNumber(completionSection.getMobileNumber());
+        if (partialAccount.isEmpty()){
+            return null;
+        }
         return CompletionSection.builder()
                 .mobileNumber(completionSection.getMobileNumber())
                 .personalDetails(completionSection.isPersonalDetails())
-                .address(completionSection.isAddress())
+//                .address(completionSection.isAddress())
                 .bankDetails(completionSection.isBankDetails())
                 .nomineeDetails(completionSection.isNomineeDetails())
-                .nidPhotos(completionSection.isNidPhotos())
+                .liveVerificationPhotos(completionSection.isLiveValidationPhotos())
                 .documents(completionSection.isDocuments())
+                .emailAddress(completionSection.getEmail())
+                .boPayment(completionSection.isBoPayment())
                 .build();
     }
 }
