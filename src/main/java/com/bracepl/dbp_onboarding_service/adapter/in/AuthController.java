@@ -32,6 +32,7 @@ public class AuthController {
     @PostMapping(value = "/public/new-password")
     public ServiceResponse setNewPassword(@RequestBody NewPasswordDto newPasswordDto) throws Exception {
         return authUseCase.setNewPassword(newPasswordDto);
+
     }
 
     @PostMapping(value = "/public/validate-token")
